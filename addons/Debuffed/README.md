@@ -1,8 +1,8 @@
-# Debuffed — Icon Presentation Test 2.4.4 — Ctrl+drag screen-grid snapping
+# Debuffed — Icon Presentation Test 2.4.5 — drag position persistence
 
 Original addon: Xathe, `Debuffed` v1.0.0.4 (Windower/Lua).  
 Icon presentation, help, and transitions: A.  
-Testing build: `1.0.0.4-icons-test2.4.4-grid1` (2026-10-18).
+Testing build: `1.0.0.4-icons-test2.4.5-save1` (2026-11-07).
 
 ## Installation
 
@@ -19,7 +19,7 @@ Command aliases: `//db`, `//dbf`, `//debuffed`. `//db` is the short alias; `//db
 
 The icon field is always draggable as before. **Drag normally** for smooth, unrestricted pixel positioning within the current Windower UI viewport. **Hold either Ctrl key while dragging** to floor the field's top-left parent anchor onto the same shared, screen-origin grid as BarFiller2/EnemyBar2: `(273,57)` becomes `(270,50)` at the default 10px spacing. Child outlines, icon art, texts and timers follow that one anchor; individual elements do not snap independently.
 
-`//db grid` reports spacing, `//db grid 10` restores the default and `//db grid 16` sets 16px. This is independent of `//db iconsize`, `//db wrap` and timer size. Grid spacing and the moved location persist to the character's existing settings. The widget is clamped to the viewport. If it is larger than the viewport (for example, too many large icons), its anchor clamps to `(0,0)` on the overflowing axis; reduce slots, wrap, or icon size if needed.
+`//db grid` reports spacing, `//db grid 10` restores the default and `//db grid 16` sets 16px. This is independent of `//db iconsize`, `//db wrap` and timer size. Grid spacing and the moved location persist to the character's existing settings. Drag coordinates are recorded immediately, then saved after roughly 0.65 seconds without an anchor change; a display/layout command, restart, or unload saves any pending movement immediately. The widget is clamped to the viewport. If it is larger than the viewport (for example, too many large icons), its anchor clamps to `(0,0)` on the overflowing axis; reduce slots, wrap, or icon size if needed.
 
 The classic text fallback retains its historical behavior; the new grid applies to the **icon** field's existing draggable backdrop, not an unrelated text widget. No extra keyboard or mouse blocking is introduced.
 
@@ -82,10 +82,11 @@ For example: `//db timerx -2`, `//db timery -4`, `//db slots 16`, `//db wrap 8`.
 
 ## Testing status
 
-Lua parser checks and mocked renderer/command simulations passed, including manual and edit countdowns, layout resize, `restart`/`unload`, and primitive cleanup. **Not yet live-tested in FFXI**. See `TESTING.md` included with the addon in the testing archive for procedures and scope.
+Lua parser checks and mocked renderer regression simulations passed for drag saving, mouse jitter under Ctrl snap, viewport changes, icon sizes, and shutdown. Earlier animation/command checks are preserved in `TESTING.md`. **Test 2.4.5 has not yet been verified in FFXI.** See `TESTING.md` included with the addon in the testing archive for procedures and scope.
 
 ## Changelog
 
+- **Test 2.4.5 (2026-11-07):** Corrected position persistence after normal and Ctrl+drag. Pending moves can no longer be prevented from saving by same-cell snapped motion; screen-boundary corrections are recorded too. The fallback save timer uses wall time instead of CPU time if LuaSocket is unavailable. Movement is saved before edit/layout changes, restart and unload. No changes to tracking, drag capture, icon layout or animation timing.
 - **Test 2.4 (2026-10-13):** BattleStations-style chat help; 12-second countdown preview; editable 1:10 looping dummy timers with transparent samples + retained edit boxes; 16/16 defaults; fade-before-restart/unload; preserved tracking.
 - **Test 2.3 (2026-10-10):** Arial bold-italic timer font and adjustable size/X/Y positions, configurable slots and wrapping, added `//db` alias.
 - **Test 2.2 (2026-10-10):** Chat-log command feedback, fixed preview texture initialization, individual slot edit guides, updated A authorship.

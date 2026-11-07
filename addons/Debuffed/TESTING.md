@@ -1,6 +1,34 @@
 # TESTING — Debuffed Icon Presentation
 
-## Current development — Test 2.4.4 Grid 1 (2026-10-18)
+## Current development — Test 2.4.5 Save 1 (2026-11-07)
+
+- **User observation (live FFXI):** Version `1.0.0.4-icons-test2.4.4-grid1` sometimes fails to retain the newly dragged position. This is a report about the previous version; the new fix has **not** been tested in-game.
+- **Source:** `rerorriM-Mirrorer/Windower-Addons`, based on committed `work/debuffed-ctrl-grid` commit `5a8fcda4f6daf68754c801c2f65ef6657a9d2c09`. Isolate this work on a new branch; do not replace the previously working `work/debuffed-icons`, existing grid branch, or `dev` baseline.
+- **Diagnosis:** In Grid 1, pending saves occur only in the `elseif` branch of `sync_position`. When `images.lua` repeatedly proposes a raw position inside the same snapped grid cell, the `if moved` branch prevents the debounce from saving, even though the anchor has stopped changing. `layout()` also clamps a changed viewport position without recording it in `settings.pos`, and `visual_time()` falls back to CPU time if LuaSocket is unavailable, making the wait depend on client CPU usage.
+- **Fix:** Track any effective anchor changes, including viewport clamps; use a real elapsed clock for the save debounce (LuaSocket `gettime`, with `os.time` fallback). Check the pending-save timer **independently** of raw drag motion. Flush pending positions before a display/edit/layout transition, restart/unload fade, and on renderer destruction. The existing `images.lua` mouse capture, Ctrl snap, icon layout, and tracking are retained.
+- **Modified executable files:** `addons/Debuffed/icon_renderer.lua` and `addons/Debuffed/Debuffed.lua` (build marker plus position-flush wiring). No external input interception, texture or saved-config schema changes. `draggrid` remains default 10px.
+
+### Available verification — simulated/static, not FFXI
+
+- Lua `loadfile` parse for both files using `texlua --luaonly`: **PASS**. This parser isn't a full Lua 5.1/Windower environment.
+- Renderer mock: **PASS** — normal drag saved after debounce; Ctrl snapping to screen-origin 10/16px grid; repeated raw jitter inside the same snapped cell no longer blocks saving; explicit flush saves immediately and exactly once; pending changes save on `destroy`.
+- Layout regression mock: **PASS** — grid spacing independent of 12/24/96px icons, oversized field and viewport resize adjust the anchor and save it; bounds checked across 320×240, 960×540, 1280×720, 1600×900, and 3840×2160.
+- LuaSocket absent mock: **PASS** — fallback persistence clock advances by wall time (`os.time`) even if CPU time would not.
+- Static scope comparison against Test 2.4.4: tracker section unchanged, original mouse capture/keyboard callback preserved, no animation timing change. Earlier tests remain historical observations, not retested in FFXI.
+
+### In-game acceptance checks (pending)
+
+1. Back up `Windower/addons/Debuffed/`, especially `data/settings.xml`. Install the new `Debuffed/` folder and reload; check `//db status` shows `1.0.0.4-icons-test2.4.5-save1`.
+2. Drag the field to a new *non-grid* location. Wait a second, check `//db status` for its reported field coordinates, `//lua r Debuffed`, and verify it returns at the new position.
+3. Repeat with **left Ctrl** and **right Ctrl**, moving in and out of the same 10px cell several times before releasing. Reload and verify the last snapped anchor persists. Check `//db grid 16` and restore 10.
+4. Drag and immediately run `//db edit off`, change layout or slots, or `//db restart`. Verify position survives. Repeat using `//db unload` and `//lua l Debuffed`.
+5. Try small and large icons, changed wraps, edges of 3840×2160 and smaller 1600×900/1280×720/960×540 clients. Verify position is saved after onscreen clamping and no icons/timers drift.
+6. Check `//db preview`, editing guides, real debuffs, target switching, and animation/restart/unload timing. For multiple clients, confirm their saved positions behave independently.
+7. If the problem continues, record `//db status` field coordinates before and after reload and which character/window size is affected; do not assume the on-screen position equals the file's saved coordinates.
+
+---
+
+## Previous development — Test 2.4.4 Grid 1 (2026-10-18)
 
 - **Repo / source branch:** `rerorriM-Mirrorer/Windower-Addons`, starting at `work/debuffed-icons` commit `667da6e`; candidate on `work/debuffed-ctrl-grid` (keeps live-used version separate).
 - **Scope:** Icon field positioning only. Native `images.lua` retains mouse capture; callback simply observes left/right Ctrl (DIK 29/157) without consuming keyboard input. The field's single draggable backdrop is the absolute screen-origin grid anchor.

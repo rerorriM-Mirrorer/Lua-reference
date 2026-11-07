@@ -2,7 +2,14 @@
 
 Read this first when preparing or evaluating a development/testing batch. This cumulative, project-specific record belongs at the repository and testing-package roots alongside `WORKFLOW.md`.
 
-## Current testing batch — documentation adoption (2026-10-13)
+## Debuffed — position save regression (2026-11-07)
+
+- **User's live observation:** `1.0.0.4-icons-test2.4.4-grid1` sometimes does not retain a newly dragged position. This is a report about the old build, not a verification of the fix.
+- **Development candidate:** `work/debuffed-position-save-20261107`, based on `5a8fcda` with no changes to `work/debuffed-icons`, `work/debuffed-ctrl-grid`, or `dev`.
+- **Scope and evidence:** Correct pending position persistence, record viewport clamping, and flush on settings/display transitions or shutdown. Original packet tracker unchanged. Lua parser, simulated drag/save regression, Ctrl snap, UI boundaries, scaling via icon sizes, and no-LuaSocket timing passed offline. In-game validation is pending.
+- **Detailed cumulative history and exact next tests:** [Debuffed/TESTING.md](addons/Debuffed/TESTING.md).
+
+## Previous testing batch — documentation adoption (2026-10-13)
 
 - **Project:** Windower-Addons (including ConsoleBGPlus) (`rerorriM-Mirrorer/Windower-Addons`).
 - **Batch:** Documentation-only adoption; no addon testing package or executable changes.

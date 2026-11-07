@@ -15,6 +15,13 @@ local function visual_time()
     return os.clock()
 end
 
+-- A debounced *settings save* must use elapsed wall time. In multibox play,
+-- os.clock() advances by CPU time and can defer a 0.65s save indefinitely.
+local function persistence_time()
+    if clock_ok and socket and socket.gettime then return socket.gettime() end
+    return os.time()
+end
+
 local IconRenderer = {}
 IconRenderer.__index = IconRenderer
 
@@ -292,6 +299,24 @@ function IconRenderer:constrain_anchor(x, y, snap, screen_w, screen_h)
     return anchor_coordinate(x, max_x, grid), anchor_coordinate(y, max_y, grid)
 end
 
+-- Keep the recorded anchor and the persistent setting in sync. This helper
+-- also covers positions corrected by viewport/layout bounds, not just drags.
+function IconRenderer:record_position(x, y)
+    local pos = self.settings.pos
+    if x == pos.x and y == pos.y then return end
+    pos.x, pos.y = x, y
+    self.drag_dirty = true
+    self.last_moved = persistence_time()
+end
+
+-- Save once after movement settles, or immediately before a display change,
+-- restart, or unload. A pending move must not depend on a particular idle frame.
+function IconRenderer:flush_position()
+    if not self.drag_dirty then return end
+    self.settings:save()
+    self.drag_dirty = false
+end
+
 function IconRenderer:set_position(x, y)
     self.backdrop:pos(x, y)
     if self.visible then self:layout() end
@@ -371,6 +396,7 @@ function IconRenderer:layout()
     if bounded_x ~= x or bounded_y ~= y then
         x, y = bounded_x, bounded_y
         self.backdrop:pos(x, y)
+        self:record_position(x, y)
     end
     self.backdrop:size(width, height)
     -- Editing does not silently override the user's transparent background.
@@ -630,30 +656,30 @@ function IconRenderer:sync_position(ctrl_held)
     local screen_w, screen_h = ui_dimensions()
     if self.last_ui_w ~= screen_w or self.last_ui_h ~= screen_h then
         -- Rebound on a live client resolution change, even without a mouse move.
+        -- layout() now records any corrected anchor for the next settings save.
         self:layout()
     end
     local x, y = self.backdrop:pos()
-    local moved = x ~= self.settings.pos.x or y ~= self.settings.pos.y
-    if moved then
-        -- images.lua already owns mouse capture and has moved the backdrop.
-        -- Observe that motion; do not intercept or synthesize mouse events.
+    if x ~= self.settings.pos.x or y ~= self.settings.pos.y then
+        -- images.lua owns mouse capture. Snap/clamp only the parent anchor,
+        -- and save its effective coordinates rather than the raw drag value.
         local nx, ny = self:constrain_anchor(x, y, ctrl_held, screen_w, screen_h)
         if nx ~= x or ny ~= y then self.backdrop:pos(nx, ny) end
         if nx ~= self.settings.pos.x or ny ~= self.settings.pos.y then
-            self.settings.pos.x, self.settings.pos.y = nx, ny
-            self.drag_dirty = true
-            self.last_moved = visual_time()
+            self:record_position(nx, ny)
+            self:layout()
         end
-        self:layout() -- child positions remain relative to the same anchor
-    elseif self.drag_dirty and visual_time() - (self.last_moved or 0) > 0.65 then
-        self.settings:save()
-        self.drag_dirty = false
+    end
+    -- Check independently of raw mouse motion: images.lua may keep proposing
+    -- sub-grid coordinates while Ctrl is held, even when our anchor is still.
+    if self.drag_dirty and persistence_time() - (self.last_moved or 0) >= 0.65 then
+        self:flush_position()
     end
     self:tick() -- animation is frame-driven, independent of 0.1s tracking poll
 end
 
 function IconRenderer:destroy()
-    if self.drag_dirty then self.settings:save() end
+    self:flush_position()
     self:hide()
     for _, guide in ipairs(self.guides) do images.destroy(guide) end
     for _, sample in ipairs(self.samples) do images.destroy(sample) end

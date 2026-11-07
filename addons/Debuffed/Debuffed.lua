@@ -31,7 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -- Windower version 1.0.0.4. The new renderer only reads debuffed_mobs.
 _addon.name = 'Debuffed'
 _addon.author = 'Xathe (Asura); icon presentation: A'
-_addon.version = '1.0.0.4-icons-test2.4.4-grid1'
+_addon.version = '1.0.0.4-icons-test2.4.5-save1'
 _addon.commands = {'dbf', 'db', 'debuffed'}
 
 config = require('config')
@@ -377,6 +377,10 @@ local function toggle_bool(field, value)
 end
 
 local function update_display()
+    -- Capture a final in-flight drag before commands reapply saved coordinates.
+    -- Save immediately so edit/layout changes cannot restore an older anchor.
+    icon_view:sync_position(drag_ctrl[29] or drag_ctrl[157])
+    icon_view:flush_position()
     icon_view:set_position(settings.pos.x, settings.pos.y)
     update_box()
 end
@@ -469,8 +473,9 @@ local function start_shutdown(action)
         return
     end
     shutdown_action = action
-    -- Flush any pending drag position through the normal renderer path first.
+    -- Commit the final drag before the short shutdown fade begins.
     icon_view:sync_position(drag_ctrl[29] or drag_ctrl[157])
+    icon_view:flush_position()
     icon_view:begin_exit()
     notice(action == 'restart' and 'Restarting Debuffed...' or 'Unloading Debuffed...')
 end
