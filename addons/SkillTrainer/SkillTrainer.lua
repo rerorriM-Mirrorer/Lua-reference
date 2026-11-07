@@ -1,6 +1,6 @@
 _addon.name = 'SkillTrainer'
 _addon.author = 'A'
-_addon.version = '0.2.0-beta'
+_addon.version = '0.3.0-beta'
 _addon.commands = {'st', 'skilltrainer'}
 
 require('chat')
@@ -30,6 +30,7 @@ local skill_ranks = {
     enhancing_magic = {BLM='E', PLD='D', RDM='B+', RUN='B-', SCH='D', WHM='C+'},
     singing         = {BRD='C'},
     summoning_magic = {SMN='A-'},
+    enfeebling_magic = {RDM='A+', BLM='C+', GEO='C+', WHM='C', DRK='C', SCH='D'},
 }
 
 local rank_low = {
@@ -92,6 +93,30 @@ local trained_name, trained_job, trained_level = nil, nil, nil
 local casts = 0
 local debug_enabled = false
 local paused_notice = nil
+local book_run = nil
+local whole_skill_levels = {}
+
+-- Retail Sparks skill-up tomes are a contiguous, verified set: 6147-6179.
+-- Their order corresponds to these 33 resource skill IDs. Book IDs, not
+-- substring matching, prevent /st books from using unrelated consumables.
+local book_skill_ids = {
+    1,2,3,4,5,6,7,8,9,10,11,12,25,26,27,28,29,30,31,
+    32,33,34,35,36,37,40,41,42,39,38,43,44,45,
+}
+local book_by_id, book_list = {}, {}
+for offset, skill_id in ipairs(book_skill_ids) do
+    local item_id = 6146 + offset
+    local item, skill = res.items[item_id], res.skills[skill_id]
+    if item and item.en and skill and skill.en then
+        local entry = {
+            id = item_id, name = item.en, skill_id = skill_id,
+            skill_name = skill.en,
+            key = skill.en:lower():gsub('[%s%-]', '_'),
+        }
+        book_by_id[item_id] = entry
+        book_list[#book_list + 1] = entry
+    end
+end
 
 local function notice(message)
     windower.add_to_chat(0, string.color('SkillTrainer', 167) .. string.color(' -> ', 200) .. string.color(message, 0))
@@ -107,6 +132,7 @@ local function help()
         {'//st enhancing [minutes]', 'Loop an available Bar-element spell.'},
         {'//st singing [minutes]', 'Loop an available self-buff song.'},
         {'//st summoning [minutes]', 'Summon and release only Carbuncle.'},
+        {'//st books', 'Use recognized skill-up tomes in Inventory, one at a time.'},
         {'//st cap <number|auto>', 'Optional cap override for current mode.'},
         {'//st status', 'Show mode, skill, cap, MP, and time left.'},
         {'//st stop', 'Stop immediately (and stand if we initiated resting).'},
@@ -131,6 +157,7 @@ local function refresh_owner(player)
     local identity = owner_identity(player)
     if identity ~= cap_owner then
         observed_caps, manual_caps, packet_levels, server_cap_levels = {}, {}, {}, {}
+        whole_skill_levels = {}
         master_level, announced_cap = nil, nil
         cap_owner = identity
     end
@@ -222,6 +249,109 @@ local function player_safe(info, player)
     return true
 end
 
+-- Seed the whole-skill boundary from the most recent packet or Windower
+-- player values, so the first update is not mistaken for a huge skill gain.
+local function seed_whole_skill(player, key)
+    local value = packet_levels[key] or (player and player.skills and player.skills[key])
+    if value ~= nil then whole_skill_levels[key] = math.floor(tonumber(value) or 0) end
+end
+
+local function book_inventory()
+    local items = windower.ffxi.get_items(0)
+    return items and (items.inventory or items) or nil
+end
+
+local function inventory_books(player)
+    local slots = book_inventory()
+    local eligible, skipped, first = 0, 0, nil
+    if not slots then return nil end
+    -- Slot order is deterministic and avoids arbitrarily selecting a different
+    -- stack when FFXI moves or consumes an item from inventory.
+    for slot = 1, 80 do
+        local entry = slots[slot]
+        local book = entry and book_by_id[entry.id]
+        if book and (entry.count or 0) > 0 then
+            if observed_caps[book.key] == true or not player.skills or player.skills[book.key] == nil then
+                skipped = skipped + entry.count
+            else
+                eligible = eligible + entry.count
+                if not first then first = {slot=slot, id=entry.id, before=entry.count, book=book} end
+            end
+        end
+    end
+    return eligible, skipped, first
+end
+
+local function stop_books(reason)
+    if not book_run then return end
+    notice(('Books stopped: %s | %d used.'):format(reason, book_run.used))
+    book_run = nil
+end
+
+local function start_books()
+    local player, info = windower.ffxi.get_player(), windower.ffxi.get_info()
+    if not player or not player.skills or not info or not info.logged_in then
+        notice('Log in before using skill-up books.'); return
+    end
+    refresh_owner(player)
+    local eligible, skipped = inventory_books(player)
+    if eligible == nil then notice('Unable to read Inventory; no books used.'); return end
+    if eligible == 0 then
+        notice(('No eligible skill-up books in Inventory (%d capped/unavailable skipped).'):format(skipped))
+        return
+    end
+    if active then stop('switching to books') end
+    if book_run then stop_books('restarting') end
+    for _, book in ipairs(book_list) do seed_whole_skill(player, book.key) end
+    book_run = {
+        owner = owner_identity(player), zone = info.zone,
+        next_action = os.time() + 1, started = os.time(),
+        used = 0, skipped = skipped, pending = nil,
+    }
+    notice(('Books started: %d eligible in Inventory | %d capped/unavailable skipped.'):format(eligible, skipped))
+end
+
+local function tick_books()
+    local session = book_run
+    if not session then return end
+    local now = os.time()
+    if now - session.started >= 3600 then stop_books('60-minute safety limit'); return end
+    local info, player = windower.ffxi.get_info(), windower.ffxi.get_player()
+    if not info or not info.logged_in or not player then stop_books('logged out'); return end
+    if owner_identity(player) ~= session.owner or info.zone ~= session.zone then
+        stop_books('character, job, level, or zone changed'); return
+    end
+    local inventory = book_inventory()
+    if not inventory then stop_books('Inventory unavailable'); return end
+    if session.pending then
+        local pending = session.pending
+        local slot_item = inventory[pending.slot]
+        local left = (slot_item and slot_item.id == pending.id) and (slot_item.count or 0) or 0
+        if left < pending.before then
+            session.used = session.used + 1
+            session.pending = nil
+            session.next_action = now + 2
+            debug(('Book used: %s (%d total)'):format(pending.book.name, session.used))
+        elseif observed_caps[pending.book.key] == true then
+            session.pending = nil
+            session.next_action = now + 1
+        elseif now - pending.sent >= 12 then
+            stop_books('no Inventory confirmation for ' .. pending.book.name .. '; check item-use messages')
+        end
+        return
+    end
+    if now < session.next_action or not player_safe(info, player) or player.status ~= 0 then return end
+    local available, skipped, next_book = inventory_books(player)
+    if available == nil then stop_books('Inventory unavailable'); return end
+    if not next_book then
+        stop_books(('finished (%d capped/unavailable books left untouched)'):format(skipped))
+        return
+    end
+    session.pending = next_book
+    next_book.sent = now
+    windower.send_command('input /item "' .. next_book.book.name .. '" <me>')
+end
+
 local function spell_for_player(player, mode)
     local known = windower.ffxi.get_spells()
     if not known then return nil end
@@ -259,6 +389,7 @@ local function start(mode_name, minutes)
         notice('No usable spell found for ' .. mode.name .. ' on this job.'); return
     end
     if active then stop('switching modes') end
+    if book_run then stop_books('switching to ' .. mode.name) end
     refresh_owner(player)
     active = mode
     active.spell = spell
@@ -271,6 +402,7 @@ local function start(mode_name, minutes)
     phase = 'idle'
     rest_attempts, rest_owned, casts, paused_notice = 0, false, 0, nil
     announced_cap = nil
+    seed_whole_skill(player, mode.key)
     notice(('%s started | %s | %s | skill %s | %dm limit'):format(
         mode.name, player.name, spell.en, tostring(current_skill(player)), minutes))
     report_calculated_cap(player)
@@ -297,7 +429,7 @@ local function request_stand(now)
 end
 
 local function tick()
-    if not active then return end
+    if not active then tick_books(); return end
     local now = os.time()
     if now >= expires_at then stop('session time limit'); return end
     if now < next_tick then return end
@@ -397,6 +529,14 @@ local function tick()
 end
 
 local function status()
+    if book_run then
+        local player = windower.ffxi.get_player()
+        local count, skipped = player and inventory_books(player)
+        local current = book_run.pending and book_run.pending.book.name or 'selecting next book'
+        notice(('Books | used %d | remaining %s | skipped %s | %s'):format(
+            book_run.used, tostring(count or '?'), tostring(skipped or '?'), current))
+        return
+    end
     if not active then notice('Idle. Type //st help for modes.'); return end
     local player = windower.ffxi.get_player()
     local remaining = math.max(0, expires_at - os.time())
@@ -452,12 +592,26 @@ windower.register_event('incoming chunk', function(id, data, modified, injected,
         return
     end
 
-    for _, mode in pairs(modes) do
-        local level = tonumber(packet[mode.name .. ' Level'])
-        if level then packet_levels[mode.key] = level end
-        if packet[mode.capped] ~= nil then
-            observed_caps[mode.key] = (packet[mode.capped] == true or packet[mode.capped] == 1)
-            if observed_caps[mode.key] and level then server_cap_levels[mode.key] = level end
+    -- The same 0x062 update covers the 33 book skills and our four loop modes.
+    for _, book in ipairs(book_list) do
+        local key, name = book.key, book.skill_name
+        local level = tonumber(packet[name .. ' Level'])
+        local capped = packet[name .. ' Capped']
+        if level then
+            local prior = whole_skill_levels[key]
+            packet_levels[key] = level
+            local whole = math.floor(level)
+            if prior ~= nil and whole > prior and
+                    ((active and active.key == key) or book_run) then
+                local mode = active and active.key == key and active or book
+                local total = cap_text(player, mode)
+                notice(('Congratulations! %s %d/%s (+%d)'):format(name, whole, total, whole - prior))
+            end
+            whole_skill_levels[key] = whole
+        end
+        if capped ~= nil then
+            observed_caps[key] = (capped == true or capped == 1)
+            if observed_caps[key] and level then server_cap_levels[key] = level end
         end
     end
     if active then
@@ -468,6 +622,7 @@ end)
 
 windower.register_event('zone change', function()
     if active then stop('zoning') end
+    if book_run then stop_books('zoning') end
 end)
 
 local function parse_minutes(value)
@@ -483,7 +638,12 @@ end
 local commands = {}
 commands.help = function() help() end
 commands.status = function() status() end
-commands.stop = function() if active then stop('user request') else notice('Already stopped.') end end
+commands.stop = function()
+    if active then stop('user request')
+    elseif book_run then stop_books('user request')
+    else notice('Already stopped.') end
+end
+commands.books = function() start_books() end
 commands.restart = function()
     if not last_mode then notice('No previous session to restart.'); return end
     start(last_mode, last_minutes)
@@ -497,6 +657,7 @@ commands.debug = function(value)
 end
 commands.unload = function()
     if active then stop('unloading') end
+    if book_run then stop_books('unloading') end
     notice('Unloading.')
     windower.send_command('lua unload SkillTrainer')
 end
@@ -515,4 +676,5 @@ end)
 
 windower.register_event('unload', function()
     if active then cleanup_rest() end
+    book_run = nil
 end)

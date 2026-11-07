@@ -1,4 +1,4 @@
-# SkillTrainer — 0.2.0 beta
+# SkillTrainer — 0.3.0 beta
 
 A small, opt-in Windower 4 skill-training addon evolved from the standalone CarbyTrainer v1.0 Lua file. Each client runs independently. No spell is cast merely by loading the addon.
 
@@ -12,22 +12,23 @@ Copy the `SkillTrainer` folder to `Windower/addons/SkillTrainer`. In-game: `//lu
 - `//st enhancing [minutes]` — Repeat an available Barstone/Barstonra/Barfire/Barfira.
 - `//st singing [minutes]` — Repeat an available Army's Paeon/Valor Minuet song. Songs require no MP; this mode stops on **Singing** skill cap, not necessarily the equipped instrument's cap.
 - `//st summoning [minutes]` — Summon Carbuncle only when pet-free; release only if current pet is Carbuncle. Works as the CarbyTrainer replacement.
+- `//st books` — Use recognized skill-up tomes from **Inventory** in sequence until exhausted. Skip capped/unavailable skills, confirm each item count decrement, stop if use is not confirmed. Safe to run separately from spell training.
 - `//st cap <number>` — Manually set a skill cap for the current mode, if automatic cap status hasn't been observed or you want to stop earlier.
 - `//st cap auto` — Remove the manual cap override.
-- `//st status` — Show current skill / calculated cap, server capped state, MP, timer and actions.
+- `//st status` — Show current skill/cap, MP and time for spell loops, or books used/remaining/skipped during `//st books`.
 - `//st stop` — Stop, standing up if SkillTrainer initiated the rest.
 - `//st restart` — Start the last mode for its last duration again.
 - `//st debug on|off` — Show decisions/transitions for testing.
 - `//st unload` — Stop, then unload.
 - `//st help` — Display commands.
 
-Duration defaults to **60 minutes**, and can be set between 1 and 1440 minutes per session. This is a backup stop; the observed server cap flag stops training first.
+Spell-loop duration defaults to **60 minutes**, adjustable from 1 to 1440 minutes. `//st books` has its own 60-minute safety limit. The server capped flag stops a spell loop first.
 
 ## Numeric cap calculation and server confirmation
 
 The **0x062 Skills Update** packet contains `Healing Magic Level` / `Healing Magic Capped` (and equivalent fields for other modes), **but not the numerical skill cap**. SkillTrainer calculates the cap from the main job's skill rank and level using the documented FFXI skill-cap progression from level 1 to 99. It reads the latest skill value directly from the packet, falling back to Windower's `get_player().skills` until a packet arrives.
 
-Supported rank/job pairs: Healing (WHM, PLD, RDM, SCH); Enhancing (BLM, PLD, RDM, RUN, SCH, WHM); Singing (BRD); Summoning (SMN). At level 99, a known **Master Level adds +1 per level** to the cap; SkillTrainer learns it from passive 0x061 or 0x0DF packets. If Master Level has not yet been observed, the number is explicitly shown as a **base cap**, e.g. `424+ML? (base only)`, rather than claiming an exact total. Scholar's rank is the base D rank; Light Arts can enhance effective skill, but the **server capped flag is authoritative** for the actual stopping decision.
+Supported rank/job pairs: Healing (WHM, PLD, RDM, SCH); Enhancing (BLM, PLD, RDM, RUN, SCH, WHM); Singing (BRD); Summoning (SMN); and Enfeebling (BLM, DRK, GEO, RDM, SCH, WHM) for book-progress reporting. Other book skills display an unknown cap until one is observed capped; no unsupported numeric cap is invented. At level 99, a known **Master Level adds +1 per level** to the cap; SkillTrainer learns it from passive 0x061 or 0x0DF packets. If Master Level has not yet been observed, the number is explicitly shown as a **base cap**, e.g. `424+ML? (base only)`, rather than claiming an exact total. Scholar's rank is the base D rank; Light Arts can enhance effective skill, but the **server capped flag is authoritative** for the actual stopping decision.
 
 Examples (before Master Level): WHM 75 Healing cap **276**; WHM 99 Healing **424**; SMN 99 Summoning **417**; BRD 99 Singing **373**. A WHM 99 at ML25 has a Healing cap of **449**.
 
@@ -37,10 +38,19 @@ The chat format uses `string.color` per WORKFLOW.md: separator 140; heading 167;
 
 References: [Windower packet fields](https://github.com/Windower/Lua/blob/dev/addons/libs/packets/fields.lua), [FFXIclopedia Combat Skills rank/cap chart](https://ffxiclopedia.fandom.com/wiki/Category:Combat_Skills), [Master Level skill cap bonus](https://wiki.ffo.jp/html/38412.html).
 
+
+## Skill-up books and congratulations
+
+`//st books` identifies the 33 known Sparks skill-up books by item ID **6147–6179**. For example, **Inv. report** (`6169`) increases **Enfeebling Magic**; **Aid for All** (`6168`) increases **Enhancing Magic**; **Coveffe Musings** (`6167`) increases **Healing Magic**. The addon reads **active Inventory only** (`get_items(0)`); it does not use items from Sack, Satchel, Case or Wardrobes and does not move items. Other consumables are never selected.
+
+Book mode is deliberately exclusive with spell training. Each `/item "<resource item name>" <me>` command is followed by a wait for that slot's quantity to decrease. A successful decrease schedules the next book after a short buffer; a capped skill is skipped; an unconfirmed use after 12 seconds **stops** the book session rather than retrying indefinitely. `//st status` reports used, eligible remaining, skipped and pending item. `//st stop`, `//st unload`, job/level/zone changes, and the 60-minute session limit all end book mode. Skill values unavailable for the main job are skipped. If `0x062` hasn't been observed since loading, some capped books may only be rejected by the game; the timeout then stops the queue.
+
+Whenever the incoming `0x062` packet shows a **new whole-number** skill level during an active mode, SkillTrainer reports `SkillTrainer -> Congratulations! Healing Magic 152/276 (+1)` (example for a WHM at level 75). Fractional skill gains do not cause duplicate messages. In book mode any affected skill may be announced; when a job/rank numeric cap isn't known, it prints `unknown` instead of guessing. Source book mapping: [Skill Up Books](https://pegasusxi.com/wiki/Category:Skill_Up_Book).
+
 ## Safety and limitations
 
 - Runs only when explicitly started; never auto-starts from loading. Blocks new actions during menus, chat entry, combat, death and zoning.
-- Stops on job, level, character or zone changes; does not alter gear, use consumables, deploy Trusts or engage enemies.
+- Stops on job, level, character or zone changes; does not alter gear, deploy Trusts or engage enemies. Only the explicit `//st books` command uses recognized skill-up consumables from Inventory.
 - Skilling from a **subjob alone** cannot advance a skill not owned by the main job. An attempted spell need not succeed; if unavailable/recast handling varies, report the exact behavior.
 - Casts use resource-defined MP costs, availability, and conservative cast/recast buffers; the beta has **no confirmed spell-completion event handling** yet. Observe whether all actual casts land and whether resting behaves correctly in-game.
 - Changing gear/job/spells during a session is not recommended. Song mode assumes a suitable instrument is already equipped if training instrument skill is desired.
@@ -50,9 +60,11 @@ References: [Windower packet fields](https://github.com/Windower/Lua/blob/dev/ad
 
 - Initial input: `CarbyTrainer.zip` from this conversation, version 1.0.
 - Source baseline: `rerorriM-Mirrorer/Windower-Addons`, branch `dev`, head `e9cf6ad66b42c322be0351dd735893c85bac4369` when checked 2026-11-06.
-- Version 0.1 was a local uncommitted beta. Version 0.2 is prepared on the `skilltrainer-0.1-beta` testing branch; see TESTING.md for published commit status, checks and remaining in-game verification.
+- Version 0.1 was a local uncommitted beta. Version 0.2 was published as commit `77b832c` on the `skilltrainer-0.1-beta` branch. Version 0.3 extends that tested source; see TESTING.md for publication and in-game verification status.
 
 ## Cumulative changelog
+
+- **2026-11-06 — 0.3.0-beta:** Add `//st books` for all 33 recognized skill-up tomes, Inventory-only sequential consumption with no automatic retries, capped/unavailable skipping and count confirmation; add one congratulatory message per completed whole skill level during a training or book session; calculate Enfeebling Magic caps where job rank is supported; update status/help/packet docs and mocked tests.
 
 - **2026-11-06 — 0.2.0-beta:** Calculate main-job numerical skill caps for all four training modes using skill-rank tables; account for observed Master Level; consume live 0x062 skill levels; continue using server capped flags for stopping; display current/maximum and server state; adopt WORKFLOW.md chat colors and output conventions; expand simulated tests and packet documentation.
 

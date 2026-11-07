@@ -1,88 +1,112 @@
+# Current Development Status — 2026-11-06 (America/Chicago) — SkillTrainer 0.3.0-beta
+
+- **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`; source baseline `77b832cc213f9e3ffd250f30c3a4c7ff22a9cc23` (last published version 0.2). Work remains isolated from `dev`.
+- **Change:** `//st books` uses only the 33 known Sparks skill-up tomes (item IDs 6147–6179) from active Inventory; serial item use with count-change confirmation, skipping known capped/unavailable skills and stopping on timeout or unsafe transitions. Add congratulatory whole-level skillup messages from incoming `0x062` and optional Enfeebling Magic cap calculation. Chat follows existing WORKFLOW coloring.
+- **User-confirmed live baseline:** User says earlier SkillTrainer training is “already working great.” There is no live report for these 0.3 changes.
+- **Verification:** Lua 5.4 parsing and mocked Windower behavior tests passed (book filtering, item-use flow, status, packet skillup, duplicate suppression, timeout, stop, Cure regression). Lua 5.1-native Windower and real FFXI testing NOT RUN.
+- **Next live check:** On Lionstag, note `//st status`, run `//st books`, verify Inv. report is recognized as Enfeebling Magic and only actual Inventory items decrease. Check full-skill congratulations and that `//st stop`/timeouts prevent further use.
+- **Checkpoint:** This section records the 0.2 starting SHA, not its own final publication SHA. See branch history for final 0.3 SHA.
+
+## Current tests — SkillTrainer 0.3.0-beta (2026-11-06)
+
+1. Load with `//lua l SkillTrainer`: confirm no cast or consumable action until user explicitly invokes a mode.
+2. Use `//st books` with Inv. reports in Inventory; verify recognized name, one-at-a-time `/item` use and exactly one confirmation per count decrease. No other item IDs consumed.
+3. Place a capped skill book alongside an eligible one; confirm skipped count and no action for capped book when `0x062` cap flag has been observed. Confirm an unavailable-skill book is skipped.
+4. Simulate an item command with no Inventory decrement: after 12 seconds the queue stops with diagnostic, no repeated consumption. `//st stop`, `//st unload`, job/level/zone change and 60-minute guard must terminate.
+5. Whole-level changes from 0x062 should congratulate exactly once, e.g. Healing Magic 151→152 with current/cap. Repeated packets and same-integer fractional increments should not notify.
+6. Regression: `//st healing 5` still casts Cure, rests/stands as before; enhancing, singing and summoning loops retain their prior state machine and 60-minute default. Check all in-game separately before promotion to dev.
+
+**Performed:** Lua 5.4 syntax parse PASS; 0.3 Lua mocked tests PASS for eligibility, sequencing, no false repeats, whole-skillup, command status, stop, timeout, capped flags and Cure; pre-existing 0.2 original tests were not all rerun against the new source. **Not performed:** Windows/Windower 4 real gameplay, item-use server messages or real packet captures.
+
+## 2026-11-06 — User observation and delivery register
+
+- **Request:** User specifically asked for `//st books` to consume all skill-up books in Inventory (Lionstag holds “Inv. Reports”) and a congratulatory `current/cap` notification on each complete skill increase.
+- **Reference check:** Inv. report ID 6169 is **Enfeebling Magic**; Aid for All ID 6168 is Enhancing; Coveffe Musings ID 6167 is Healing. Corrects the earlier mistaken tentative identification. Source: FFXI Skill Up Book table and Sparks item mapping.
+- **Delivery:** 0.3.0 beta test ZIP plus source/docs on working branch; exact commit and verification in handoff.
+- **History:** All earlier entries follow without removal.
+
+---
+
 # Current Development Status — 2026-11-06 (America/Chicago)
 
-- **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`; source baseline `e9cf6ad66b42c322be0351dd735893c85bac4369` (dev head at branch creation).
-- **Current change:** SkillTrainer 0.2.0 beta, standalone `addons/SkillTrainer` source and documentation. It calculates an eligible main-job skill's numerical cap from level/rank, adds observed Master Level when available, reads 0x062 skill values, retains server capped flag for stopping, and adopts WORKFLOW chat colors.
-- **User-confirmed baseline:** User reports previous 0.1.0 SkillTrainer beta is already working well; 0.2 changes remain awaiting game testing.
-- **Verification:** Nine groups of Linux Lua 5.4 mocked tests passed (six base workflow groups and three cap/format/packet groups). Actual Windows/Windower 4 / FFXI tests: NOT RUN. Neither simulated spell dispatch nor packet parsing is a live test.
-- **Packet evidence:** `addons/SkillTrainer/docs/PACKETS.md`; no injection, static Windower fields inspected for 0x062, 0x061, 0x0DF; actual packet observations pending.
-- **Next:** On Lionstag run `//st healing 5`, compare `//st status` to game skill, observe 0x062 after skillup and confirm MP recovery continues; test level-99 Master Level path and color display.
-- **Published checkpoint:** See GitHub branch commit history; this status records the starting source checkpoint, not a self-referential final commit SHA.
+- **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons`, `skilltrainer-0.1-beta`, based on `dev` at `e9cf6ad66b42c322be0351dd735893c85bac4369`. Final source publication/commit status is listed in the delivery report; this ZIP is not a live-verified release.
+- **Current beta:** SkillTrainer `0.2.0-beta`. Rank/level numeric caps for four modes; 0x062 skill Level and Capped flags; optional Master Level from 0x061/0x0DF; WORKFLOW chat colors and prefix. Training logic retained from 0.1.
+- **Most recent live feedback:** User reported on 2026-11-06 that the earlier SkillTrainer beta was 'Already working great.' No new live testing has yet been reported for numerical caps or message formatting.
+- **Verification:** Original six simulated behavior tests and three cap/packet/style test groups pass with the installed Linux Lua 5.4 library. No Windows/Windower 4 or FFXI runtime was available for this beta's verification.
+- **Unresolved:** Confirm actual packet field names and ordering in-game, especially 0x061/0x0DF Master Level; confirm rank/level totals, live server flag handling, and format. Numeric caps are estimates until confirmed by the server flag. SCH Light Arts changes effective rank; calculated figure is base main-job rank.
+- **Next action:** On Lionstag, `//st healing 5`, `//st status` before and after a skillup. Check that the displayed total matches his in-game job cap, the server field reads 'uncapped' and the existing rest/stand/cure cycle continues. Report one sample status line and any mismatch.
 
-## Current tests — SkillTrainer 0.2.0-beta (2026-11-06)
+## Current tests — cap calculation / presentation (2026-11-06, 0.2.0-beta)
 
-1. `//lua l SkillTrainer` must not cast on load; `//st healing 5` starts Cures, rests at 20% MP, stands at 90%, resumes.
-2. `//st status` shows skill/current rank-derived cap, Master Level provisional or exact state, observed server cap flag, MP and timer. WHM 75 base Healing cap 276; WHM 99 base 424. Unknown 99 Master Level shown as base only.
-3. 0x062 skill update refreshes current skill; server Capped=true stops; numeric estimation alone does not prematurely stop; manually overridden cap still stops when reached.
-4. `//st help` uses chat-only 140 separator, 167 heading, 200 command prefix/arrow, 207 syntax, 0 descriptions; normal notices channel 0.
-5. Regression: `//st enhancing`, `//st singing`, `//st summoning`, pet safety, timeout, menu/combat and zoning protections.
+1. Begin Healing: `//st healing 5`, then `//st status`. Expect numerical current/cap for eligible main jobs. WHM 75 = 276; PLD 99 = 373 base; SCH 99 = 334 base.
+2. After a 0x062 skill update, expect skill value to reflect packet Level; 'server uncapped' until flag becomes true; after true, stop and do not cast again. Numeric value alone must not cause premature stop.
+3. At 99, absent a Master Level packet the cap displays `+ML? (base only)`. On 0x061 or 0x0DF, cap updates by +1 per observed Master Level. Verify on a 99 character only.
+4. `//st help`: headings 167, separator 140, prefix/arrow 200, syntax 207, descriptive text 0; all chat lines channel 0. Normal feedback `SkillTrainer -> ...` with heading/arrow/neutral body.
+5. Regression: Lionstag Cure/rest/stand, Barspell, Paeon, Carbuncle release, manual cap, timer, no load-time casting, menu/combat/zoning. No actual FFXI tests performed for 0.2 as of packaging.
 
-**Verification completed:** Lua 5.4 syntax and nine mocked test groups pass; no in-game checks on this beta. The earlier user report of 0.1 success remains historical, not a new test result.
+## Checks actually performed — simulated/static only
 
-## 2026-11-06 — SkillTrainer delivery record and user feedback
+- **PASS:** Original `test_skilltrainer_mock.py`: 6 groups (no auto start, healing/rest/recover, server cap stop, override, enhancing, singing, pet safety, summoning/timeout).
+- **PASS:** New `test_skilltrainer_caps.py`: 3 groups (chat formatting; WHM75 cap and packet level; WHM99 master level/flag priority; ranks for WHM/RDM/PLD/SCH/BRD/SMN/RUN at relevant levels and job isolation).
+- **PASS:** Lua syntax via Lua 5.4 `loadfile` in tests; Lua 5.1 runtime not available in this environment.
+- **NOT TESTED:** FFXI Windower 4 / live skill update, real Master Level, live chat colors or output positioning.
 
-- **Request:** Calculate the current numeric skill cap on skill-update packets, format all messages to WORKFLOW.md; user reports existing trainer works great.
-- **Delivered source:** `addons/SkillTrainer/SkillTrainer.lua`, README, WORKFLOW, TESTING and packet notes on this working branch; 0.1 beta was previously a local ZIP, not committed.
-- **History:** All preceding root TESTING.md contents follow unchanged below.
+## Delivery register update
+
+| Date | Batch | Contents | Commit | Verification |
+| --- | --- | --- | --- | --- |
+| 2026-11-06 | 0.2.0-beta | Numeric cap calculator; Master Level observation; packet level; WORKFLOW chat formatting; docs/tests | See published branch commit in delivery message | Linux Lua 5.4 mocked tests, not live FFXI |
+
+## New user observation / request — 2026-11-06
+
+- User reports that the earlier SkillTrainer beta is already working very well.
+- User asks whether current numeric caps can be calculated when the skill-update packet arrives, and requests all messages formatted per WORKFLOW.md conventions.
 
 ---
 
 # TESTING.md
 
-## Agent entry-point adoption — 2026-10-16
+## Current development status — 2026-11-06
 
-- Added [`AGENTS.md`](AGENTS.md) to direct repository-aware coding agents to read the current `WORKFLOW.md` and `TESTING.md` before making changes.
-- **Commit:** [`f0651c0`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/f0651c0f9ed0104803611a2309f3039dba078c2a).
-- **Scope:** Documentation only; no addon code changed, testing ZIP generated, or in-game test performed.
-- **Continuity:** Earlier testing and development records below remain intact.
+- **Project:** SkillTrainer 0.1.0-beta, standalone new Windower addon; based on locally supplied `CarbyTrainer.zip` v1.0.
+- **Repository baseline:** `rerorriM-Mirrorer/Windower-Addons`, `dev`, SHA `e9cf6ad66b42c322be0351dd735893c85bac4369`. A separate `skilltrainer-0.1-beta` branch was created but this local testing prototype has **not been committed or pushed to the branch**.
+- **Runtime:** Windower 4 / Lua 5.1 target. Tested only with Linux-hosted Lua 5.4 syntax loading and mocked Windower calls, not inside Windows/FFXI. The mocked runtime does not replicate all Windower details.
+- **New behavior:** Explicit Healing/Enhancing/Singing/Summoning modes; passive packet cap flags; configurable session timer (default 60m); `/heal on` at 20% MP and `/heal off` at 90% MP; refuse other pets; stop on job/zone changes.
+- **Next:** Lionstag's actual Cure/MP/rest test; check 0x062 cap status and player job/spell resource lookup in-game; refine wait/confirmation timing.
 
-## Package layout convention — 2026-10-16
+## Current tests — perform in game
 
-- **Repository:** Keep `WORKFLOW.md` and `TESTING.md` at the repository root.
-- **Testing ZIPs:** Include both inside the installable addon folder alongside the README and code. For patch/test-only bundles without an addon folder, place both next to the delivered files. No redundant outer ZIP-root copies.
-- **Reference commit:** [`bd228bd`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/bd228bdf02c3cb14b88de7d71a41fbe41568667e).
-- **Verification:** Documentation only; no game code changed and no in-game tests performed for this instruction update.
-- **History:** Previous ZIP-root conventions remain below as historical records, with dated corrections where they were stated as current instructions.
+1. Place `SkillTrainer` in Windower addons and load using `//lua l SkillTrainer`. Expected: no actions until explicitly started.
+2. On Lionstag as a job with Healing Magic as a main-job skill and Cure learned, use `//st healing 5`. Expected: Cure on self repeatedly, no duplicated commands while spells cast/recast.
+3. Once MP is 20% or lower, expect `/heal on`, enter resting status 33, wait for 90% MP, `/heal off`, resume Cure without manual input.
+4. Use `//st status`; verify skill, MP, remaining time, phase. Test `//st stop` while resting, and ensure trainer stands only if *it* initiated resting.
+5. Observe a natural healing-skill increase and confirm `0x062` capped flag is read and training ends when Healing Magic becomes blue-capped. If already capped before load, test `//st cap <number>` as a fallback.
+6. Test `//st enhancing 2` on a suitable job with a Bar-element spell, `//st singing 2` on BRD, and `//st summoning 2` on SMN. Confirm each stops after 2 minutes.
+7. For summoning, verify no second summon if another pet is out, and no release of avatars besides Carbuncle. Do not run CarbyTrainer at the same time.
+8. Test interruption with chat/menu, combat, zoning, job change, and unload. Report any unexpected command after stop.
 
-Read this first when preparing or evaluating a development/testing batch. This cumulative, project-specific record belongs at the repository ~~and testing-package~~ root alongside `WORKFLOW.md`. **Correction (2026-10-16):** In testing packages, put both guides alongside the addon or patch/test files, not at the outer ZIP root.
+## Verification performed — simulated/static only
 
-## Current testing batch — documentation adoption (2026-10-13)
+- **Lua parser:** PASS — `luaL_loadfilex` with installed Lua 5.4 library; this is not the Windower Lua 5.1 runtime.
+- **Mock Windower harness:** PASS — explicit opt-in (no load-time actions), Cure at `<me>`, no duplicate rapid cast, 20% MP rest, confirmation of resting state, 90% MP stand, continued Cure, cap packet immediately stops.
+- **Mock override:** PASS — exact cap number immediately stops at current skill.
+- **Mock other modes:** PASS — available Barspell selected; song casts without MP; non-Carbuncle pet never released; Carbuncle summoned/released and time limit obeyed. Cap cache is partitioned by character/job/level to avoid a prior job's cap flag stopping a new job.
+- **Actual FFXI/Windower:** NOT TESTED. This beta should be treated as a first-pass test package, not an in-game verified release.
 
-- **Project:** Windower-Addons (including ConsoleBGPlus) (`rerorriM-Mirrorer/Windower-Addons`).
-- **Batch:** Documentation-only adoption; no addon testing package or executable changes.
-- **Starting default-branch commit:** `080ec5e34d386f6b07e6a654b104589dae71f51b` (`dev`).
-- **Documents:** Added root `WORKFLOW.md` and `TESTING.md`.
-- **Reference:** [NPCMirror consolidated workflow](https://github.com/rerorriM-Mirrorer/ffxi-NPCmirror/blob/main/WORKFLOW.md).
-- **Verification:** Check root filenames and links; compare migration against its starting commit and confirm only Markdown documentation changed.
-- **In-game testing:** Not performed for this documentation-only change; existing addon behavior has not been revalidated.
+## Previous behavior and regression notes
 
-- **Recorded migration commit:** [`16a05d6`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/16a05d601ee5b23a9503f2e20bbeee9b9e9ab4c0).
-- **Verified result:** Git comparison against the recorded starting commit lists Markdown changes only; `WORKFLOW.md` and `TESTING.md` exist at the repository root. No Lua source paths changed.
+- **CarbyTrainer v1.0:** Local original ZIP contained a single Lua file with 60-minute timer, check for Carbuncle presence, summon if MP >= 5, release existing Carbuncle, pause when menu/chat/combat active. It was previously delivered, but **no confirmed in-game testing was available in this conversation**.
+- **Behavior intentionally changed:** SkillTrainer does not auto-start on load. The summoning loop now may rest for MP rather than simply waiting when low, and may stop at observed skill cap before its hour expires.
+- No original CarbyTrainer source files are modified. Both addons can be installed but shouldn't run together on the same character.
 
-## Tests for the next functional batch
+## Delivery register
 
-List the requested change, actions to perform, expected outcomes, previously working behavior to retest, and results actually observed. This repository may maintain multiple addons; name the addon and its testing branch in each future batch.
+| Date | Batch | Package | Commit | Test status |
+| --- | --- | --- | --- | --- |
+| 2026-11-06 | SkillTrainer 0.1.0-beta | `SkillTrainer-0.1.0-beta.zip` | Not committed / not pushed | Mock + syntax checks only |
 
-## Previous tests and checks
+## User materials / requests
 
-No historical test results were reconstructed or verified during this documentation migration. Preserve previous testing materials and bring forward only accurately attributed results when reviewed.
-
-## Cumulative changelog
-
-- **2026-10-13 — Navigation refinement:** Corrected the heading levels for the Testing Packages and Shared Development Conventions sections in `WORKFLOW.md` ([`ca3b01b`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/ca3b01bc98d1017a27d5bddc1f9fe15f89eaef7f)). Documentation only; no addon code changed.
-
-- **2026-10-13:** Adopted the shared two-document development convention without changing executable addon behavior.
-
-## Delivered packages and documents
-
-| Date | Batch | Item | Type | Commit/reference | Notes |
-| --- | --- | --- | --- | --- | --- |
-| 2026-10-13 | Documentation adoption | WORKFLOW.md; TESTING.md | Repository documents | [`16a05d6`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/16a05d601ee5b23a9503f2e20bbeee9b9e9ab4c0) | No testing package or Lua changes |
-
-## User-provided materials, observations, and requests
-
-- **2026-10-13 — Shared conventions:** Combine Agathos, Design, and Workflow into one `WORKFLOW.md` with linked table of contents; retain `TESTING.md` as the project-specific historical record; both documents belong in each active repository and testing-package root.
-- Add earlier requests, tests, screenshots, files, and observations only when their provenance is verified; record date, batch, and reference.
-
-## Corrections and retention
-
-Correct errors with ~~strikethrough~~, an explanation, and the replacement. Remove historical testing information only by mutual agreement.
+- **2026-11-06:** User requested conversion of CarbyTrainer to SkillTrainer, especially Lionstag casting Cure on himself, resting until MP nearly full, and continuing until current Healing Magic skill cap. Also proposed singing and Bar-element Enhancing Magic loops and requested more possibilities.
+- **Source archive:** `CarbyTrainer.zip`, supplied earlier in this conversation; single Lua file with preexisting behavior described above.
+- **Future:** Instrument cap tracking for bard songs; other spells/magic schools; successful-cast acknowledgement; skillup rate metrics; safer progress UI; per-character persistent defaults.

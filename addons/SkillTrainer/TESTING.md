@@ -1,3 +1,32 @@
+# Current Development Status — 2026-11-06 (America/Chicago) — SkillTrainer 0.3.0-beta
+
+- **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`; source baseline `77b832cc213f9e3ffd250f30c3a4c7ff22a9cc23` (last published version 0.2). Work remains isolated from `dev`.
+- **Change:** `//st books` uses only the 33 known Sparks skill-up tomes (item IDs 6147–6179) from active Inventory; serial item use with count-change confirmation, skipping known capped/unavailable skills and stopping on timeout or unsafe transitions. Add congratulatory whole-level skillup messages from incoming `0x062` and optional Enfeebling Magic cap calculation. Chat follows existing WORKFLOW coloring.
+- **User-confirmed live baseline:** User says earlier SkillTrainer training is “already working great.” There is no live report for these 0.3 changes.
+- **Verification:** Lua 5.4 parsing and mocked Windower behavior tests passed (book filtering, item-use flow, status, packet skillup, duplicate suppression, timeout, stop, Cure regression). Lua 5.1-native Windower and real FFXI testing NOT RUN.
+- **Next live check:** On Lionstag, note `//st status`, run `//st books`, verify Inv. report is recognized as Enfeebling Magic and only actual Inventory items decrease. Check full-skill congratulations and that `//st stop`/timeouts prevent further use.
+- **Checkpoint:** This section records the 0.2 starting SHA, not its own final publication SHA. See branch history for final 0.3 SHA.
+
+## Current tests — SkillTrainer 0.3.0-beta (2026-11-06)
+
+1. Load with `//lua l SkillTrainer`: confirm no cast or consumable action until user explicitly invokes a mode.
+2. Use `//st books` with Inv. reports in Inventory; verify recognized name, one-at-a-time `/item` use and exactly one confirmation per count decrease. No other item IDs consumed.
+3. Place a capped skill book alongside an eligible one; confirm skipped count and no action for capped book when `0x062` cap flag has been observed. Confirm an unavailable-skill book is skipped.
+4. Simulate an item command with no Inventory decrement: after 12 seconds the queue stops with diagnostic, no repeated consumption. `//st stop`, `//st unload`, job/level/zone change and 60-minute guard must terminate.
+5. Whole-level changes from 0x062 should congratulate exactly once, e.g. Healing Magic 151→152 with current/cap. Repeated packets and same-integer fractional increments should not notify.
+6. Regression: `//st healing 5` still casts Cure, rests/stands as before; enhancing, singing and summoning loops retain their prior state machine and 60-minute default. Check all in-game separately before promotion to dev.
+
+**Performed:** Lua 5.4 syntax parse PASS; 0.3 Lua mocked tests PASS for eligibility, sequencing, no false repeats, whole-skillup, command status, stop, timeout, capped flags and Cure; pre-existing 0.2 original tests were not all rerun against the new source. **Not performed:** Windows/Windower 4 real gameplay, item-use server messages or real packet captures.
+
+## 2026-11-06 — User observation and delivery register
+
+- **Request:** User specifically asked for `//st books` to consume all skill-up books in Inventory (Lionstag holds “Inv. Reports”) and a congratulatory `current/cap` notification on each complete skill increase.
+- **Reference check:** Inv. report ID 6169 is **Enfeebling Magic**; Aid for All ID 6168 is Enhancing; Coveffe Musings ID 6167 is Healing. Corrects the earlier mistaken tentative identification. Source: FFXI Skill Up Book table and Sparks item mapping.
+- **Delivery:** 0.3.0 beta test ZIP plus source/docs on working branch; exact commit and verification in handoff.
+- **History:** All earlier entries follow without removal.
+
+---
+
 # Current Development Status — 2026-11-06 (America/Chicago)
 
 - **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons`, `skilltrainer-0.1-beta`, based on `dev` at `e9cf6ad66b42c322be0351dd735893c85bac4369`. Final source publication/commit status is listed in the delivery report; this ZIP is not a live-verified release.
