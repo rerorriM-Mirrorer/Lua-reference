@@ -1,3 +1,31 @@
+# Current Development Status — 2026-11-06 (America/Chicago)
+
+- **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`; source baseline `e9cf6ad66b42c322be0351dd735893c85bac4369` (dev head at branch creation).
+- **Current change:** SkillTrainer 0.2.0 beta, standalone `addons/SkillTrainer` source and documentation. It calculates an eligible main-job skill's numerical cap from level/rank, adds observed Master Level when available, reads 0x062 skill values, retains server capped flag for stopping, and adopts WORKFLOW chat colors.
+- **User-confirmed baseline:** User reports previous 0.1.0 SkillTrainer beta is already working well; 0.2 changes remain awaiting game testing.
+- **Verification:** Nine groups of Linux Lua 5.4 mocked tests passed (six base workflow groups and three cap/format/packet groups). Actual Windows/Windower 4 / FFXI tests: NOT RUN. Neither simulated spell dispatch nor packet parsing is a live test.
+- **Packet evidence:** `addons/SkillTrainer/docs/PACKETS.md`; no injection, static Windower fields inspected for 0x062, 0x061, 0x0DF; actual packet observations pending.
+- **Next:** On Lionstag run `//st healing 5`, compare `//st status` to game skill, observe 0x062 after skillup and confirm MP recovery continues; test level-99 Master Level path and color display.
+- **Published checkpoint:** See GitHub branch commit history; this status records the starting source checkpoint, not a self-referential final commit SHA.
+
+## Current tests — SkillTrainer 0.2.0-beta (2026-11-06)
+
+1. `//lua l SkillTrainer` must not cast on load; `//st healing 5` starts Cures, rests at 20% MP, stands at 90%, resumes.
+2. `//st status` shows skill/current rank-derived cap, Master Level provisional or exact state, observed server cap flag, MP and timer. WHM 75 base Healing cap 276; WHM 99 base 424. Unknown 99 Master Level shown as base only.
+3. 0x062 skill update refreshes current skill; server Capped=true stops; numeric estimation alone does not prematurely stop; manually overridden cap still stops when reached.
+4. `//st help` uses chat-only 140 separator, 167 heading, 200 command prefix/arrow, 207 syntax, 0 descriptions; normal notices channel 0.
+5. Regression: `//st enhancing`, `//st singing`, `//st summoning`, pet safety, timeout, menu/combat and zoning protections.
+
+**Verification completed:** Lua 5.4 syntax and nine mocked test groups pass; no in-game checks on this beta. The earlier user report of 0.1 success remains historical, not a new test result.
+
+## 2026-11-06 — SkillTrainer delivery record and user feedback
+
+- **Request:** Calculate the current numeric skill cap on skill-update packets, format all messages to WORKFLOW.md; user reports existing trainer works great.
+- **Delivered source:** `addons/SkillTrainer/SkillTrainer.lua`, README, WORKFLOW, TESTING and packet notes on this working branch; 0.1 beta was previously a local ZIP, not committed.
+- **History:** All preceding root TESTING.md contents follow unchanged below.
+
+---
+
 # TESTING.md
 
 ## Agent entry-point adoption — 2026-10-16
