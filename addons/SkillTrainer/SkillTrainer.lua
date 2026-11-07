@@ -1,6 +1,6 @@
 _addon.name = 'SkillTrainer'
 _addon.author = 'A'
-_addon.version = '0.3.0-beta'
+_addon.version = '0.3.1-beta'
 _addon.commands = {'st', 'skilltrainer'}
 
 require('chat')
@@ -15,7 +15,12 @@ local MAX_REST_ATTEMPTS = 3
 
 local modes = {
     healing = {name = 'Healing Magic', key = 'healing_magic', capped = 'Healing Magic Capped', spells = {'Cure'}},
-    enhancing = {name = 'Enhancing Magic', key = 'enhancing_magic', capped = 'Enhancing Magic Capped', spells = {'Barstone', 'Barstonra', 'Barfire', 'Barfira'}},
+    enhancing = {name = 'Enhancing Magic', key = 'enhancing_magic', capped = 'Enhancing Magic Capped',
+        -- Preserve the original self-Barspell priority. A single-target spell
+        -- fallback also supports jobs with Protect/Shell but no Barspells.
+        spells = {'Barstone', 'Barstonra', 'Barfire', 'Barfira', 'Protect', 'Shell', 'Enthunder', 'Regen', 'Aquaveil', 'Blink'},
+        -- Bar-ra, En-spells and Blink cannot be directed at another character.
+        target_spells = {'Protect', 'Shell', 'Regen'}},
     singing = {name = 'Singing', key = 'singing', capped = 'Singing Capped', spells = {"Army's Paeon", "Valor Minuet"}},
     summoning = {name = 'Summoning Magic', key = 'summoning_magic', capped = 'Summoning Magic Capped', spells = {'Carbuncle'}},
 }
@@ -95,6 +100,10 @@ local debug_enabled = false
 local paused_notice = nil
 local book_run = nil
 local whole_skill_levels = {}
+-- Session-local named target; self is always the default, including after
+-- loading/reloading. Only Healing and Enhancing use this option.
+local target_name = nil
+local target_missing = false
 
 -- Retail Sparks skill-up tomes are a contiguous, verified set: 6147-6179.
 -- Their order corresponds to these 33 resource skill IDs. Book IDs, not
@@ -129,7 +138,8 @@ end
 local function help()
     local lines = {
         {'//st healing [minutes]', 'Cure yourself, rest for MP, stop on skill cap.'},
-        {'//st enhancing [minutes]', 'Loop an available Bar-element spell.'},
+        {'//st enhancing [minutes]', 'Loop Barspells on self or Protect/Shell/Regen on a named target.'},
+        {'//st target [name|me]', 'Show or set Healing/Enhancing cast target (e.g. Myrr).'},
         {'//st singing [minutes]', 'Loop an available self-buff song.'},
         {'//st summoning [minutes]', 'Summon and release only Carbuncle.'},
         {'//st books', 'Use recognized skill-up tomes in Inventory, one at a time.'},
@@ -352,10 +362,17 @@ local function tick_books()
     windower.send_command('input /item "' .. next_book.book.name .. '" <me>')
 end
 
-local function spell_for_player(player, mode)
+local function spell_for_player(player, mode, name_override)
+    local named = name_override
+    if named == nil then named = target_name end
+    local options = (named and mode.target_spells) or mode.spells
+    -- Healing can target allies with Cure; Singing/Summoning stay self-only.
+    -- For named Enhancing targets, mode.target_spells explicitly avoids
+    -- self-only Enspells and area Bar-ra spells.
+
     local known = windower.ffxi.get_spells()
     if not known then return nil end
-    for _, name in ipairs(mode.spells) do
+    for _, name in ipairs(options) do
         local spell = res.spells:with('en', name)
         if spell and known[spell.id] then
             local levels = spell.levels or {}
@@ -367,6 +384,55 @@ local function spell_for_player(player, mode)
         end
     end
     return nil
+end
+
+local function supports_named_target(mode)
+    return mode == modes.healing or mode == modes.enhancing
+end
+
+local function cast_target()
+    if not active or not supports_named_target(active) or not target_name then
+        return '<me>'
+    end
+    -- Only validated name characters can enter a chat input command. Quotes
+    -- ensure that names with a space are interpreted as one target.
+    return '"' .. target_name .. '"'
+end
+
+local function set_target(value)
+    if value == nil or value == '' then
+        notice('Target: ' .. (target_name or 'self') .. ' | //st target <name|me>')
+        return
+    end
+    local name
+    if value:lower() ~= 'me' and value:lower() ~= 'self' then
+        if #value > 40 or #value == 0 or value:find("[^%w%s%-%'%.%(%)]") then
+            notice('Invalid target name. Use //st target Myrr or //st target me.')
+            return
+        end
+        name = value
+    end
+    -- Check spell compatibility before changing a running mode. This avoids
+    -- switching a Barspell session to a self-only spell on another character.
+    local new_spell
+    if active and supports_named_target(active) then
+        local player = windower.ffxi.get_player()
+        new_spell = player and spell_for_player(player, active, name or false)
+        if not new_spell then
+            notice('No compatible ' .. active.name .. ' spell for ' .. (name or 'self') .. '; target unchanged.')
+            return
+        end
+    end
+    target_name, target_missing = name, false
+    if new_spell then
+        active.spell = new_spell
+        -- Preserve ongoing rest/stand transitions if target changes mid-rest.
+        if not rest_owned then
+            next_action = os.time() + 2
+            phase = 'cooldown'
+        end
+    end
+    notice('Target: ' .. (name or 'self') .. (new_spell and (' | spell ' .. new_spell.en) or '') .. '.')
 end
 
 local function start(mode_name, minutes)
@@ -403,8 +469,10 @@ local function start(mode_name, minutes)
     rest_attempts, rest_owned, casts, paused_notice = 0, false, 0, nil
     announced_cap = nil
     seed_whole_skill(player, mode.key)
-    notice(('%s started | %s | %s | skill %s | %dm limit'):format(
-        mode.name, player.name, spell.en, tostring(current_skill(player)), minutes))
+    notice(('%s started | %s | %s -> %s | skill %s | %dm limit'):format(
+        mode.name, player.name, spell.en,
+        (supports_named_target(mode) and target_name) or 'self',
+        tostring(current_skill(player)), minutes))
     report_calculated_cap(player)
     if is_capped(player) then stop('skill already capped') end
 end
@@ -514,6 +582,20 @@ local function tick()
     end
 
     local spell = active.spell
+    if supports_named_target(active) and target_name then
+        local mob = windower.ffxi.get_mob_by_name(target_name)
+        if not mob or not mob.id or mob.hpp == 0 or (mob.distance and mob.distance > 20 * 20) then
+            if not target_missing then
+                notice('Waiting for target ' .. target_name .. ' to be visible and within casting range; no casts sent.')
+                target_missing = true
+            end
+            return
+        end
+        if target_missing then
+            notice('Target ' .. target_name .. ' is visible; resuming.')
+            target_missing = false
+        end
+    end
     local spell_mp = spell.mp_cost or 0
     if spell_mp > 0 and (mp < spell_mp or percent <= REST_BELOW_PERCENT) then
         request_rest(now, false)
@@ -521,7 +603,7 @@ local function tick()
     end
     local recasts = windower.ffxi.get_spell_recasts() or {}
     if (recasts[spell.recast_id] or 0) > 0 then return end
-    windower.send_command('input /ma "' .. spell.en .. '" <me>')
+    windower.send_command('input /ma "' .. spell.en .. '" ' .. cast_target())
     casts = casts + 1
     phase = 'cooldown'
     -- Conservative cast+recast buffer; confirmation from 0x062 is used for the cap.
@@ -543,8 +625,10 @@ local function status()
     local cap_value = player and cap_text(player, active) or 'unknown'
     local packet_state = observed_caps[active.key] == nil and 'pending'
         or (observed_caps[active.key] and 'capped' or 'uncapped')
-    notice(('%s on %s | %s | skill %s/%s | server %s | MP %s/%s | %dm %02ds left | %d actions'):format(
-        active.name, trained_name, phase, tostring(current_skill(player) or '?'), cap_value, packet_state,
+    notice(('%s on %s | %s | target %s | skill %s/%s | server %s | MP %s/%s | %dm %02ds left | %d actions'):format(
+        active.name, trained_name, phase,
+        (supports_named_target(active) and target_name) or 'self',
+        tostring(current_skill(player) or '?'), cap_value, packet_state,
         tostring(player and player.vitals and player.vitals.mp or '?'),
         tostring(player and player.vitals and player.vitals.max_mp or '?'),
         math.floor(remaining / 60), remaining % 60, casts))
@@ -644,6 +728,7 @@ commands.stop = function()
     else notice('Already stopped.') end
 end
 commands.books = function() start_books() end
+commands.target = function(value) set_target(value) end
 commands.restart = function()
     if not last_mode then notice('No previous session to restart.'); return end
     start(last_mode, last_minutes)

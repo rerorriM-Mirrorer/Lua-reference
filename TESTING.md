@@ -1,3 +1,14 @@
+# Current Development Status — 2026-11-07 (America/Chicago) — SkillTrainer 0.3.1 beta
+
+- **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`. Starting source checkpoint `dc9de3be0c347119437f63ab0f3b079b879c056d` (0.3.0-beta).
+- **User-confirmed FFXI outcome:** Lionstag has capped Healing Magic using SkillTrainer, as reported 2026-11-07. Exact client version / packet evidence not independently verified.
+- **Current change:** Optional `//st target Myrr` or `//st target me` for Healing/Enhancing; named Enhancing targets use Protect, Shell or Regen, self-casts retain Barspell priority with compatible fallback spells. Named target must be visible and within 20 yalms; no fallback to self if unavailable. Existing books, cap observer, MP-rest, Singing/Summoning remain unmodified.
+- **Verification:** Linux Lua 5.4 syntax and new mocked-target test pass (named casting, visibility/range pause and resume, switch to self, unsafe names rejected, Healing and Singing isolation, capped-flag stop). Actual Windows/Windower 4 and FFXI named-target testing pending.
+- **Next:** Lionstag `//st target Myrr`; `//st enhancing 5`; compare spell cast/success, skillups, target availability and `//st status`; test `//st target me`. This remains on the unverified working branch.
+- **Publication:** This is a pre-commit development status and deliberately does not identify its own final commit SHA.
+
+---
+
 # Current Development Status — 2026-11-06 (America/Chicago) — SkillTrainer 0.3.0-beta
 
 - **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`; source baseline `77b832cc213f9e3ffd250f30c3a4c7ff22a9cc23` (last published version 0.2). Work remains isolated from `dev`.

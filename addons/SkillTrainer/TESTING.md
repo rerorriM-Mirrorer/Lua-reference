@@ -1,3 +1,31 @@
+# Current Development Status — 2026-11-07 (America/Chicago) — SkillTrainer 0.3.1-beta
+
+- **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`. Starting live/baseline source is 0.3.0 commit `dc9de3be0c347119437f63ab0f3b079b879c056d`; only the 0.3.1 target changes are intended. `dev` remains untouched.
+- **New request:** Lionstag has capped Healing Magic. User wants to train Enhancing by casting Protect (and potentially Shell/Regen) on nearby Myrr, and asks if another player improves skillup rates. Research indicates other players aren't reliably better than self; appropriately leveled friendly NPCs or Trusts can improve rates.
+- **Change:** `//st target Myrr` and `//st target me` control the optional per-client, reload-volatile Healing/Enhancing target. Named Enhancing prefers Protect/Shell/Regen, while self-training retains previous Barspell priority with additional fallback spells. Target validity is checked before each cast; missing/out-of-range targets pause rather than trigger a self-cast. Session timer, MP resting, book mode, Singing and Summoning are intentionally unchanged.
+- **Observed in-game:** User reports Lionstag's Healing Magic is capped; the exact beta and cap packet evidence aren't independently observed. No named-target live testing has been reported yet.
+- **Verification:** Lua 5.4 mock harness passed for named spell dispatch, self fallback, missing/out-of-range pause+resume, unsafe target rejection, Healing reuse, song isolation, mid-session target change, and capped-flag stop. Windower 4 / Lua 5.1 / actual Myrr casting **NOT TESTED** here.
+- **Next tests:** On Lionstag, `//lua r SkillTrainer`, `//st target Myrr`, `//st enhancing 5`, `//st status`; observe whether Protect casts reach Myrr and gain skill, verify resting and resumption. Walk Myrr >20 yalms away then back; confirm no cast while away. `//st target me` while training should switch back to a self-compatible spell. Confirm a server capped flag stops the loop. If external cast errors appear, capture exact FFXI text.
+- **Publication:** This section records the source baseline; final published SHA is reported in the delivery message and GitHub commit history.
+
+## Current test batch — 0.3.1-beta, 2026-11-07
+
+| Check | Expected | Result |
+| --- | --- | --- |
+| Named target | `//st target Myrr`; Enhancing dispatches `/ma "Protect" "Myrr"` | PASS in Lua 5.4 mock, not live |
+| Default/self | `//st target me` returns to original Barstone choice | PASS in mock |
+| Target unavailable | No casts while missing or >20 yalms; resumes when visible | PASS in mock |
+| Name safety | Invalid command delimiters rejected | PASS in mock |
+| Other modes | Healing can cast Cure on name; Singing remains self-only | PASS in mock |
+| Live skills | Confirm Myrr receives Protect and skillups; 20%/90% rest | PENDING |
+| Prior book loop | Sequential consumption, confirmation, capped skill skip | No code changes; not rerun in this batch |
+
+## User observation — 2026-11-07
+
+- Lionstag has now capped Healing Magic using SkillTrainer (user-confirmed outcome). User has Protect/Shell, Enthunder, Regen, Aquaveil and Blink as potential Enhancing training spells, and would like Myrr as an optional cast target. Other-player skillups are not assumed faster; testing will establish observed throughput.
+
+---
+
 # Current Development Status — 2026-11-06 (America/Chicago) — SkillTrainer 0.3.0-beta
 
 - **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`; source baseline `77b832cc213f9e3ffd250f30c3a4c7ff22a9cc23` (last published version 0.2). Work remains isolated from `dev`.
