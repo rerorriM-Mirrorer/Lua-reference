@@ -1,6 +1,6 @@
 _addon.name = 'SkillTrainer'
 _addon.author = 'A'
-_addon.version = '0.3.1-beta'
+_addon.version = '0.3.2-beta'
 _addon.commands = {'st', 'skilltrainer'}
 
 require('chat')
@@ -18,7 +18,7 @@ local modes = {
     enhancing = {name = 'Enhancing Magic', key = 'enhancing_magic', capped = 'Enhancing Magic Capped',
         -- Preserve the original self-Barspell priority. A single-target spell
         -- fallback also supports jobs with Protect/Shell but no Barspells.
-        spells = {'Barstone', 'Barstonra', 'Barfire', 'Barfira', 'Protect', 'Shell', 'Enthunder', 'Regen', 'Aquaveil', 'Blink'},
+        spells = {'Barstone', 'Barstonra', 'Barfire', 'Barfira', 'Protect', 'Shell', 'Enthunder', 'Enstone', 'Enfire', 'Enblizzard', 'Enaero', 'Enwater', 'Regen', 'Aquaveil', 'Blink'},
         -- Bar-ra, En-spells and Blink cannot be directed at another character.
         target_spells = {'Protect', 'Shell', 'Regen'}},
     singing = {name = 'Singing', key = 'singing', capped = 'Singing Capped', spells = {"Army's Paeon", "Valor Minuet"}},
@@ -104,6 +104,9 @@ local whole_skill_levels = {}
 -- loading/reloading. Only Healing and Enhancing use this option.
 local target_name = nil
 local target_missing = false
+-- Enhancing-specific, per-client preference. nil keeps automatic priority.
+-- A selected self-only Enspell cannot be used with a named ally target.
+local enhancing_spell_preference = nil
 
 -- Retail Sparks skill-up tomes are a contiguous, verified set: 6147-6179.
 -- Their order corresponds to these 33 resource skill IDs. Book IDs, not
@@ -138,8 +141,9 @@ end
 local function help()
     local lines = {
         {'//st healing [minutes]', 'Cure yourself, rest for MP, stop on skill cap.'},
-        {'//st enhancing [minutes]', 'Loop Barspells on self or Protect/Shell/Regen on a named target.'},
+        {'//st enhancing [minutes]', 'Loop a compatible Enhancing spell on self or a named target.'},
         {'//st target [name|me]', 'Show or set Healing/Enhancing cast target (e.g. Myrr).'},
+        {'//st spell [name|auto]', 'Prefer a learned Enhancing spell, e.g. Enstone.'},
         {'//st singing [minutes]', 'Loop an available self-buff song.'},
         {'//st summoning [minutes]', 'Summon and release only Carbuncle.'},
         {'//st books', 'Use recognized skill-up tomes in Inventory, one at a time.'},
@@ -362,10 +366,25 @@ local function tick_books()
     windower.send_command('input /item "' .. next_book.book.name .. '" <me>')
 end
 
-local function spell_for_player(player, mode, name_override)
+local function spell_for_player(player, mode, name_override, preference_override)
     local named = name_override
     if named == nil then named = target_name end
     local options = (named and mode.target_spells) or mode.spells
+    if mode == modes.enhancing then
+        local preference = enhancing_spell_preference
+        if preference_override == false then preference = nil
+        elseif type(preference_override) == 'string' then preference = preference_override end
+        if preference then
+            -- Never fall back to a different spell without telling the user.
+            -- In particular, Enstone/other Enspells are self-only.
+            local supported = false
+            for _, candidate in ipairs(options) do
+                if candidate == preference then supported = true; break end
+            end
+            if not supported then return nil end
+            options = {preference}
+        end
+    end
     -- Healing can target allies with Cure; Singing/Summoning stay self-only.
     -- For named Enhancing targets, mode.target_spells explicitly avoids
     -- self-only Enspells and area Bar-ra spells.
@@ -433,6 +452,45 @@ local function set_target(value)
         end
     end
     notice('Target: ' .. (name or 'self') .. (new_spell and (' | spell ' .. new_spell.en) or '') .. '.')
+end
+
+-- Selection is local to this FFXI client and survives mode restarts, not addon reloads.
+-- Resolve using the same learned/job/target checks as normal spell discovery.
+local function set_spell(value)
+    if not value or value == '' then
+        notice('Enhancing spell: ' .. (enhancing_spell_preference or 'auto') .. ' | //st spell <name|auto>')
+        return
+    end
+    local choice
+    if value:lower() == 'auto' then
+        choice = false
+    else
+        for _, name in ipairs(modes.enhancing.spells) do
+            if name:lower() == value:lower() then choice = name; break end
+        end
+        if not choice then
+            notice('Unsupported Enhancing spell. Use //st spell auto or a supported spell (e.g. Enstone).')
+            return
+        end
+    end
+    local player = windower.ffxi.get_player()
+    if not player then notice('Log in before selecting an Enhancing spell.'); return end
+    local selected = spell_for_player(player, modes.enhancing, nil, choice)
+    if not selected then
+        notice('Cannot use ' .. (choice or 'auto selection') .. ' on ' .. (target_name or 'self') ..
+            '. Check learned spell/job; Enspells require //st target me.')
+        return
+    end
+    enhancing_spell_preference = choice or nil
+    if active == modes.enhancing then
+        active.spell = selected
+        if not rest_owned then
+            next_action = os.time() + 2
+            phase = 'cooldown'
+        end
+    end
+    notice('Enhancing spell: ' .. (enhancing_spell_preference or 'auto') ..
+        ' | selected ' .. selected.en .. ' -> ' .. (target_name or 'self') .. '.')
 end
 
 local function start(mode_name, minutes)
@@ -625,9 +683,10 @@ local function status()
     local cap_value = player and cap_text(player, active) or 'unknown'
     local packet_state = observed_caps[active.key] == nil and 'pending'
         or (observed_caps[active.key] and 'capped' or 'uncapped')
-    notice(('%s on %s | %s | target %s | skill %s/%s | server %s | MP %s/%s | %dm %02ds left | %d actions'):format(
+    notice(('%s on %s | %s | target %s | spell %s | skill %s/%s | server %s | MP %s/%s | %dm %02ds left | %d actions'):format(
         active.name, trained_name, phase,
         (supports_named_target(active) and target_name) or 'self',
+        active.spell and active.spell.en or '?',
         tostring(current_skill(player) or '?'), cap_value, packet_state,
         tostring(player and player.vitals and player.vitals.mp or '?'),
         tostring(player and player.vitals and player.vitals.max_mp or '?'),
@@ -729,6 +788,7 @@ commands.stop = function()
 end
 commands.books = function() start_books() end
 commands.target = function(value) set_target(value) end
+commands.spell = function(value) set_spell(value) end
 commands.restart = function()
     if not last_mode then notice('No previous session to restart.'); return end
     start(last_mode, last_minutes)

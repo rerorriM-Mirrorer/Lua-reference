@@ -1,3 +1,35 @@
+# Current Development Status — 2026-11-09 (America/Chicago) — SkillTrainer 0.3.2-beta
+
+- **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`. Starting checkpoint: `1b075f6b0d117c76adada69147baa536e687acc1` (0.3.1-beta); `dev` remains untouched.
+- **Request:** Let Clairvaux train Enhancing with self-only Enstone without changing Lionstag's separate Protect-on-Myrr setup.
+- **Change:** Add Enstone and other tier-I Enspells to self Enhancing candidates; add per-client `//st spell <name|auto>`, validate learned/job/target compatibility, and display selected spell in status. The rest/stand cycle, server-cap stop, books, and other training modes are preserved.
+- **Live baseline:** User confirmed Lionstag capped Healing Magic using SkillTrainer. No actual FFXI Enstone tests have been reported for 0.3.2.
+- **Verification:** Lua 5.4 syntax passed; `tests/test_target.lua` passed existing target regression; `tests/test_enstone.lua` passed simulated PLD/RDM Enstone selection, safe targeting, auto restore, invalid input rejection, restart, MP rest/stand, and server capped stop. No native Lua 5.1 or actual Windower/FFXI test this turn.
+- **Next:** Clairvaux `//st target me`, `//st spell Enstone`, `//st enhancing 5`, then `//st status`. Check spell casts, Enhancing gains, MP recovery and cap reporting; verify Lionstag's Protect-on-Myrr regression.
+- **Publication:** This file records the starting source; the delivered GitHub commit is identified separately in the handoff and branch history.
+
+## Current tests — 0.3.2-beta
+
+1. A learned RDM Lv18+ Enstone is selected even if the character also knows Protect; `//st enhancing 5` casts `/ma "Enstone" <me>`.
+2. `//st target Myrr` is rejected while Enstone is forced; `//st spell Enstone` is rejected if Myrr is configured, with no self-target fallback.
+3. `//st spell auto` returns to original automatic preference. Existing named Protect target behavior continues.
+4. At low MP the loop rests; it stands at 90% MP and resumes the selected Enstone.
+5. `//st status` includes target and selected spell; capped packet stops training; unrelated skills/books are unaffected.
+
+**Performed:** Lua 5.4 mock tests for target and Enstone passed; not in-game. Full historical book suites were not rerun because book logic was unchanged.
+
+## Delivery register — 2026-11-09
+
+| Batch | Files | Source checkpoint | Verification |
+| --- | --- | --- | --- |
+| 0.3.2-beta | SkillTrainer.lua, README, TESTING, tests/test_enstone.lua | `1b075f6b` | Lua 5.4 mocks; FFXI live pending |
+
+## User feedback — 2026-11-09
+
+- Clairvaux has Enstone and needs his own Enhancing skill loop, without disrupting Lionstag's already working setup.
+
+---
+
 # Current Development Status — 2026-11-07 (America/Chicago) — SkillTrainer 0.3.1-beta
 
 - **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`. Starting live/baseline source is 0.3.0 commit `dc9de3be0c347119437f63ab0f3b079b879c056d`; only the 0.3.1 target changes are intended. `dev` remains untouched.

@@ -1,4 +1,4 @@
-# SkillTrainer — 0.3.1 beta
+# SkillTrainer — 0.3.2 beta
 
 A small, opt-in Windower 4 skill-training addon evolved from the standalone CarbyTrainer v1.0 Lua file. Each client runs independently. No spell is cast merely by loading the addon.
 
@@ -9,9 +9,11 @@ Copy the `SkillTrainer` folder to `Windower/addons/SkillTrainer`. In-game: `//lu
 ## Commands
 
 - `//st healing [minutes]` — Repeated Cure on self or configured target; rest at or below 20% MP; rise at 90%; stop when capped or timer expires.
-- `//st enhancing [minutes]` — Self: available Barspells, falling back to Protect/Shell/Enthunder/Regen/Aquaveil/Blink. Named target: Protect, Shell, then Regen.
+- `//st enhancing [minutes]` — Self: available Barspells, falling back to Protect/Shell/Enthunder/Enstone/other tier-I Enspells/Regen/Aquaveil/Blink. Named target: Protect, Shell, then Regen.
 - `//st target Myrr` — Send Healing or Enhancing casts to the visible named character (player, party Trust or eligible NPC). Other modes stay self-targeted.
 - `//st target me` — Restore self-targeting. `//st target` reports the current target.
+- `//st spell Enstone` — Prefer exactly Enstone in Enhancing mode after verifying it is learned, job-usable, and self-target compatible. Other supported Enhancing spells may be selected similarly.
+- `//st spell auto` — Restore automatic Enhancing spell selection; `//st spell` displays the current preference.
 - `//st singing [minutes]` — Repeat an available Army's Paeon/Valor Minuet song. Songs require no MP; this mode stops on **Singing** skill cap, not necessarily the equipped instrument's cap.
 - `//st summoning [minutes]` — Summon Carbuncle only when pet-free; release only if current pet is Carbuncle. Works as the CarbyTrainer replacement.
 - `//st books` — Use recognized skill-up tomes from **Inventory** in sequence until exhausted. Skip capped/unavailable skills, confirm each item count decrement, stop if use is not confirmed. Safe to run separately from spell training.
@@ -25,6 +27,8 @@ Copy the `SkillTrainer` folder to `Windower/addons/SkillTrainer`. In-game: `//lu
 - `//st help` — Display commands.
 
 For Lionstag, run `//st target Myrr`, then `//st enhancing 5`, and check `//st status` for `target Myrr`. The name is local to each client and lasts until changed or SkillTrainer is reloaded. It may be changed during training without restarting: the addon switches to an appropriate spell, preserving an ongoing `/heal` transition. Myrr must remain visible and within approximately 20 yalms; if she leaves, the addon waits without casting, then resumes when she returns. A name must not contain chat-command characters. Named casting uses FFXI's `/ma "Protect" "Myrr"` form without changing Lionstag's actual selected target. This is *not* a guarantee of more skillups: self and other players are similar; high-level friendly NPCs/Trusts can give better rates when eligible and targetable.
+
+For Clairvaux, use `//st target me`, `//st spell Enstone`, `//st enhancing 5` for a short test (or `//st enhancing 60` for a full hour). Enstone is self-only, costs 12 MP, casts in 3 seconds, and has a 10-second recast. It can be learned by RDM from level 18, including a sufficiently leveled subjob. A configured Enspell cannot be redirected to another character; the addon explicitly rejects that combination. The spell preference is **per client**, lasts for the current addon load, and does not change Lionstag's choice on another client. `//st status` shows the actual selected spell and target, even if the preference is automatic. The existing rest, timer, and server capped flag still govern the loop. If Enstone is unavailable to the current job/subjob, the addon refuses the preference rather than silently selecting something else.
 
 Spell-loop duration defaults to **60 minutes**, adjustable from 1 to 1440 minutes. `//st books` has its own 60-minute safety limit. The server capped flag stops a spell loop first.
 
@@ -67,6 +71,8 @@ Whenever the incoming `0x062` packet shows a **new whole-number** skill level du
 - Version 0.1 was a local uncommitted beta. Version 0.2 was published as commit `77b832c` on the `skilltrainer-0.1-beta` branch. Version 0.3 added books and congratulations; version 0.3.1 adds named-target training. See TESTING.md for publication and live verification status.
 
 ## Cumulative changelog
+
+- **2026-11-09 — 0.3.2-beta:** Added first-tier Enspells (including Enstone) to self-targeting Enhancing discovery, plus optional per-client `//st spell <name|auto>` selection; validates learned/job eligibility and self-only target restrictions, permits changing spell mid-session, shows selected spell in status; retains Lionstag named-target defaults, books and capped-flag behavior.
 
 - **2026-11-07 — 0.3.1-beta:** Add `//st target <name|me>` for Healing/Enhancing spells, named-target Protect/Shell/Regen prioritization, additional self-cast spell fallbacks, conservative visibility/range pausing, safe target-name validation, mid-session switching without disrupting an ongoing MP-rest transition, and updated `status`/`help` output. No changes to Singing/Summoning target selection, book consumption, skill packet parsing or cap stop logic. User reports Lionstag has capped Healing Magic using SkillTrainer; named-target behavior is not yet confirmed in FFXI.
 

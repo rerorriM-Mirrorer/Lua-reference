@@ -1,3 +1,21 @@
+# Current Development Status — 2026-11-09 (America/Chicago) — SkillTrainer 0.3.2-beta
+
+- **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`. Source baseline: `1b075f6b0d117c76adada69147baa536e687acc1` (0.3.1-beta), which remains the previous published checkpoint.
+- **Request:** Clairvaux should train Enhancing using Enstone without changing Lionstag's Protect on Myrr.
+- **Change:** Added a spell-specific Enhancing preference (`//st spell Enstone`, `//st spell auto`), first-tier Enspell self-cast fallbacks, learned/job compatibility checks, rejection of self-only Enspells on a named target, and explicit spell in `//st status`. No changes to books, cap observer, resting or other modes.
+- **Most recent user-confirmed live result:** Lionstag successfully capped Healing Magic using an earlier SkillTrainer beta. Clairvaux's Enstone path remains unverified in game.
+- **Available checks:** Lua 5.4 syntax and mocked `test_target.lua`, `test_enstone.lua` PASS on Linux. No native Lua 5.1, Windows Windower 4 or live FFXI testing performed for this change.
+- **Next:** Test five minutes on Clairvaux with `//st target me`, `//st spell Enstone`, `//st enhancing 5`, `//st status`; confirm MP rest/stand, skillup and capped-flag result. Retest Lionstag named Protect separately.
+- **Published SHA:** Reported in the accompanying handoff and branch history after remote confirmation. This status records the source baseline, not its own commit.
+
+## SkillTrainer 0.3.2 testing entry — 2026-11-09
+
+- Added Enstone and other tier-I Enspells after original priority spells for self-cast Enhancing selection; an explicit spell preference overrides priority, is client-local and resets on addon reload.
+- Tested mock PLD/RDM skill eligibility, manual Enstone, named-target rejection, auto reset, session restart, MP rest recovery, cap-stop and invalid input. Previous target mock also passed.
+- README, addon-local TESTING.md and installable ZIP include the new commands. Existing historical testing entries follow without removal.
+
+---
+
 # Current Development Status — 2026-11-07 (America/Chicago) — SkillTrainer 0.3.1 beta
 
 - **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons` / `skilltrainer-0.1-beta`. Starting source checkpoint `dc9de3be0c347119437f63ab0f3b079b879c056d` (0.3.0-beta).
