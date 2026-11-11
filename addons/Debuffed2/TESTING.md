@@ -14,6 +14,7 @@
 - `texlua --luaonly` parsed `Debuffed2.lua` and `debuffed2_renderer.lua` successfully. This is a syntax check, not proof of Lua 5.1/Windower integration.
 - Mocked renderer creation/rendering: Arial 14 bold italic, dark 2px stroke alpha 180, unbracketed name, correct targetname on/off behavior, 24px and 96px icons, two rows of eight, position retention relative to the parent anchor, and resource cleanup: **PASS**.
 - Static identity/command verification: new addon/module/file names, `db2`/`debuffed2` aliases only, no hijacking of `db`, `dbf`, or `debuffed`, and restart/unload dispatch to `Debuffed2`: **PASS** by code inspection.
+- Mocked main-addon entrypoint: validated `Debuffed2` identity/aliases, in-chat `//db2` help, status, and exactly one `lua r Debuffed2` after a simulated restart; **PASS**. The mock does not replace Windower input or in-game testing.
 - Debuff tracker section compared byte-for-byte with Test 2.4.5 Save 1: **PASS**. Settings schema and 24px/16/16 defaults unchanged; previous persistence tests are historical and were not re-run against Windower here.
 - Actual UI rendering, input and persistence in FFXI are **not tested**; the test build must not replace the last user-tested baseline until accepted.
 
