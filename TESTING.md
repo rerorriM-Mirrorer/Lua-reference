@@ -1,4 +1,23 @@
-# Current Development Status
+# Current Development Status — 2026-11-10, v0.1.35 (silent build)
+
+- Repository/branch: `rerorriM-Mirrorer/Windower-Addons` / `consolebg-plus`. Starting published checkpoint `f51e2e532a14a873fc8cf51513fe8ee396afaa57` (v0.1.34). This batch removes addon audio; no baseline-branch promotion.
+- Remove the open/close playback helper and calls, sound defaults and commands, in-game help references, and both WAV assets. Former `sound.open`/`sound.close` keys retained in existing user settings are inert; do not delete or overwrite `data/settings.xml`. Existing frame visibility, input strip, fade logic, and linked-font calibration are intentionally unchanged.
+- Regression updates: mocked `windower.play_sound` remains a tripwire; loading, manual open/close, automatic-output, focus-loss, reload, and legacy saved flags must all make zero calls. Old sound commands now produce ordinary unknown-command feedback. The rest of the established calibration/drag/capture suite is retained.
+- Font status: Arial Rounded MT Bold size 8 is accepted at 1280x720 with saved reference full height 234px, spacing 12.4px, Input 13px and trim top/bottom 5/3; this change does **not** overwrite stored per-font profiles. Size 10 reference and size 12 trial are not certified. Intermittent clipped Input label remains unresolved and should be inspected independently of native glyph pitch.
+- Verification: structural source checks performed on this patch; mocked Lua suite and Lua 5.1 parser cannot be executed in this connector-only environment, and there has been no live FFXI test of v0.1.35. Previous v0.1.34 simulated checks remain historical, not validation of this version.
+- Next: run the silent-transition and Rounded-8 visual checks below, with a screenshot and diagnostic only if alignment remains imperfect. Do not start another full 57-case sweep.
+
+## 2026-11-10 — Focused in-game checks for v0.1.35
+
+1. Keep `ConsoleBGPlus/data/settings.xml`; replace addon files and reload. Open and close the native console with Insert several times. Also test startup pulse and automatic output. No ConsoleBG+-generated sound should play at any point. Sound commands `//cbg opensound on` and `//cbg closesound on` should report unknown command, and old audio preferences should not matter.
+2. Check manual-open compact-to-Input transition, manual-close compact fade, `//cbg preview`, `//cbg activity` and `//cbg status` to confirm sound removal did not disturb visuals or status. Test an alt that has legacy `sound` XML values if available.
+3. At the previously inspected 1280x720 UI, run `//cbg font "Arial Rounded MT Bold" 8` and `//cbg calibrate status`. Verify the existing reference restores with spacing 12.4, full height 234, trim 5/3, 16 output rows plus Input; no automatic measurement should overwrite a saved manual/reference fit. If the reference was lost, `//cbg preset 8` deliberately restores it.
+4. Open the native console and run `//cbg test` to draw the 16 numbered rows. Inspect the top row, row 16 descenders, divider, and Input baseline; type `Agjpqy` into Input *without* Enter and take a screenshot. For padding comparisons use `//cbg test trim` only if needed; it temporarily compares current/5-3/5-5 and restores saved settings. Use `//cbg diagnose` to record geometry. Separately record whether the native Input tab label is ever clipped, particularly after switching visibility.
+5. Switch away/back and reload to verify the Rounded-8 fit stays saved. Size 10/12 can follow as individual visual passes; keep their trial status until accepted. Larger/smaller UI resolutions are not yet certified.
+
+---
+
+# Previous Development Status — v0.1.34
 
 - Repository/branch: rerorriM-Mirrorer/Windower-Addons, consolebg-plus; ConsoleBGPlus v0.1.34 / Windower4. Tested starting checkpoint: d19a1f89f25b94af9fc84a0bd15ae029f0a86a6d (v0.1.33). Final published head is in handoff; baseline branches unchanged.
 - Linked font selection now starts invisible probing for new/unmeasured/estimate/addon-proxy fits, derives native-estimate spacing from fresh raw pitch times0.95, and saves the 16-row/Input fit. Saved native-estimate/manual/reference profiles restore directly. Per-pair trims and unrelated settings remain; no sample output, screenshot, input injection or requirement to open the console. Internal suite/restoration calls retain their own measurement lifecycle. No automatic migration on load/reload.
