@@ -1,3 +1,9 @@
+## v0.1.35
+
+- Remove ConsoleBG+ audio playback completely (manual open/close, WAV files, configuration defaults, commands and help). Previously saved sound flags are harmless/inert; frame transitions and fades are unchanged.
+- Keep the accepted Arial Rounded MT Bold 8 reference intact; document a focused in-game verification pass for native row alignment, Input descenders and intermittent label clipping. Size 10/12 remain provisional; no speculative new metrics.
+- Replace sound-behavior assertions with permanent silence and legacy-setting regression checks in the mocked Windower suite. No native game validation yet.
+
 ## v0.1.34
 
 - Linked font selection automatically measures new/unmeasured/rough proxy fits using the screenshot-derived 95% estimate; established estimated/manual/reference fits restore without remeasurement. Per-pair trims persist; no native sample/input/screenshot commands during normal fitting. Existing cancellation, failure and reload behavior retained.
