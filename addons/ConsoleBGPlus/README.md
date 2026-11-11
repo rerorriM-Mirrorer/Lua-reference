@@ -69,8 +69,6 @@ Type these in FFXI chat. Angle brackets mark required arguments, square brackets
     //cbg activity [on|off]                       Toggle automatic frame; keep logging
     //cbg nativeactivity [on|off]               Toggle native automatic text
     //cbg fade [<hold_ms> [fade_ms]]              Set native hold and frame fade
-    //cbg opensound on|off                      Play a cue on manual console open
-    //cbg closesound on|off                     Play a cue on manual console close
     //cbg trace on|off                          Record visibility and timing changes
     //cbg diagnose                              Save one settings/layout snapshot
     //cbg status                                Show current geometry and modes
@@ -83,7 +81,7 @@ The default native font is Verdana 12 with color 255 250 250 250. The Console la
 
 Clients launched from the same Windower installation watch the same console.log. Its growth does not identify a source client: another client's messages can trigger any enabled frame watcher. To keep native messages on an alt without the background, use **//cbg activity off** and **//cbg nativeactivity on**. The addon does not change another client's settings. The watcher checks file length about eight times per second and starts at the current end of the file when re-enabled.
 
-The bundled open and close cues play once at each native console visibility transition in the focused game window. Automatic output and preview do not play sounds. Use **//cbg opensound off** or **//cbg closesound off** to silence either cue. Replace **assets/consoleopen.wav** or **assets/closeconsole.wav** with another short PCM WAV if desired. The addon detects native visibility changes; Windower does not identify which key opened or closed it. The supplied open recording is a working draft for testing.
+ConsoleBG+ is silent: manual console opening and closing, automatic output, startup, and preview never play addon sounds. The former open/close sound commands and bundled WAVs have been removed. Old `sound` settings in a saved settings.xml are ignored; keep your data folder as usual. On an existing installation, leftover `assets/consoleopen.wav` and `assets/closeconsole.wav` can be deleted, but are never played.
 
 ## Linked font calibration
 
