@@ -1,5 +1,17 @@
 # TESTING.md
 
+## Current Development Status - 2026-11-12 (America/Chicago)
+
+- **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `feature/fpsfix-zone-60fps-20261112` (unverified working branch, not merged into dev).
+- **Source baseline:** `e9cf6ad66b42c322be0351dd735893c85bac4369` on `dev`.
+- **Batch:** FPSFix v1.0.0 - add standalone addon under `addons/FPSFix/`; on load/login/zone, request `config FrameRateDivisor 1` immediately and again after 1 and 3 seconds. No settings files; silent automatic actions.
+- **Verification:** Lua 5.4 parser pass (container shared library); scripted mock Windower event tests pass for load, login, zone, delayed retries, stale-generation suppression, status, manual apply, restart, unload. Lua 5.1/Windower 4 runtime and in-game FPS transitions **not tested**.
+- **Live tests requested:** Load on a client with the Config plugin active; ensure 60 FPS after login and across repeated zones; reproduce a reset to 30 FPS and confirm recovery; check 0->1 overwrite; verify multibox clients independently. Test a competing addon resetting FPS more than 3 seconds after zoning.
+- **Next:** User live confirmation, investigate any later reset. Do not promote this untested batch to `dev`.
+
+---
+
+
 ## Agent entry-point adoption — 2026-10-16
 
 - Added [`AGENTS.md`](AGENTS.md) to direct repository-aware coding agents to read the current `WORKFLOW.md` and `TESTING.md` before making changes.
@@ -30,6 +42,16 @@ Read this first when preparing or evaluating a development/testing batch. This c
 - **Recorded migration commit:** [`16a05d6`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/16a05d601ee5b23a9503f2e20bbeee9b9e9ab4c0).
 - **Verified result:** Git comparison against the recorded starting commit lists Markdown changes only; `WORKFLOW.md` and `TESTING.md` exist at the repository root. No Lua source paths changed.
 
+## FPSFix v1.0.0 testing batch - 2026-11-12
+
+- **User request:** Windower can revert to 30 FPS (FrameRateDivisor 2) after login/zone. User permits overriding uncapped (0) as well.
+- **Behavior:** Always request divisor 1 on load, login and zone change. Reapply once each after 1 and 3 seconds. Never poll every frame; do not alter persistent Config settings. Automatic behavior is silent.
+- **Dependencies:** Windower 4 LuaCore and Windower Config plugin.
+- **Automated results:** Lua 5.4 syntax PASS; mock event/command/lifecycle PASS. Tests use mocked Windower commands/events, not an actual FFXI client.
+- **Not yet tested:** Actual zone transitions, plugin configuration ordering, character switching, live FPS, six-client resource use, conflicting addons.
+- **Installation:** Install the `FPSFix` folder in Windower addons, then `//lua load fpsfix`. ZIP includes README.md, WORKFLOW.md and TESTING.md inside that folder.
+- **Publication:** New working branch `feature/fpsfix-zone-60fps-20261112`. Baseline `e9cf6ad66b42c322be0351dd735893c85bac4369`. Final branch commit is reported in the delivery; do not self-embed the newly created commit hash in this file.
+
 ## Tests for the next functional batch
 
 List the requested change, actions to perform, expected outcomes, previously working behavior to retest, and results actually observed. This repository may maintain multiple addons; name the addon and its testing branch in each future batch.
@@ -40,6 +62,8 @@ No historical test results were reconstructed or verified during this documentat
 
 ## Cumulative changelog
 
+- **2026-11-12:** Added FPSFix 1.0.0, a self-contained 60 FPS reapplication addon. Mock-tested only; awaiting live validation.
+
 - **2026-10-13 — Navigation refinement:** Corrected the heading levels for the Testing Packages and Shared Development Conventions sections in `WORKFLOW.md` ([`ca3b01b`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/ca3b01bc98d1017a27d5bddc1f9fe15f89eaef7f)). Documentation only; no addon code changed.
 
 - **2026-10-13:** Adopted the shared two-document development convention without changing executable addon behavior.
@@ -48,9 +72,12 @@ No historical test results were reconstructed or verified during this documentat
 
 | Date | Batch | Item | Type | Commit/reference | Notes |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-12 | FPSFix v1.0.0 | addons/FPSFix; ZIP | New Lua addon | Working branch feature/fpsfix-zone-60fps-20261112 | Mock tests passed; live FFXI untested |
 | 2026-10-13 | Documentation adoption | WORKFLOW.md; TESTING.md | Repository documents | [`16a05d6`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/16a05d601ee5b23a9503f2e20bbeee9b9e9ab4c0) | No testing package or Lua changes |
 
 ## User-provided materials, observations, and requests
+
+- **2026-11-12 - FPS reset:** User requests automatic 60 FPS on login/zone and expressly allows changing existing uncapped divisor 0; no need to condition changes on reading divisor 2.
 
 - **2026-10-13 — Shared conventions:** Combine Agathos, Design, and Workflow into one `WORKFLOW.md` with linked table of contents; retain `TESTING.md` as the project-specific historical record; both documents belong in each active repository and testing-package root.
 - Add earlier requests, tests, screenshots, files, and observations only when their provenance is verified; record date, batch, and reference.
