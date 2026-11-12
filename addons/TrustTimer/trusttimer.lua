@@ -1,6 +1,6 @@
 _addon.name = 'TrustTimer'
 _addon.author = 'A'
-_addon.version = '0.1.0-test1'
+_addon.version = '0.1.0-test2'
 _addon.commands = {'tt', 'trusttimer'}
 
 require('chat') -- Adds string.color for Windower chat help.
@@ -192,13 +192,13 @@ local function help()
     help_line('help', 'Show these commands.')
     help_line('status', 'Show countdown, invite, and HUD state.')
     help_line('test [seconds]', 'Preview a 15-second timer, or a custom duration.')
-    help_line('edit on|off', 'Show a draggable placement preview.')
+    help_line('edit [on|off]', 'Toggle a draggable placement preview.')
     help_line('pos <x> <y>', 'Set HUD position in pixels.')
     help_line('resetpos', 'Recover the default HUD position.')
     help_line('size <pixels>', 'Set text size (8-40).')
     help_line('duration <seconds>', 'Set estimated invite cooldown (30-600).')
-    help_line('enabled on|off', 'Enable or disable automatic HUD display.')
-    help_line('debug on|off', 'Log invitation and party detection decisions.')
+    help_line('enabled [on|off]', 'Toggle automatic HUD display.')
+    help_line('debug [on|off]', 'Toggle invitation and party diagnostics.')
     help_line('clear', 'Clear the currently estimated cooldown.')
     help_line('restart', 'Reload the addon once.')
     help_line('unload', 'Unload the addon once.')
@@ -247,8 +247,14 @@ local function command(cmd, arg1, arg2)
         return
     end
     if cmd == 'edit' or cmd == 'enabled' or cmd == 'debug' then
-        local value = flag(arg1)
-        if value == nil then message('Use //tt '..cmd..' on|off.', 123) return end
+        -- Bare toggle commands invert their current state; explicit on/off is idempotent.
+        local current
+        if cmd == 'edit' then current = state.editing
+        elseif cmd == 'enabled' then current = settings.enabled
+        else current = settings.debug end
+        local value
+        if arg1 == nil then value = not current else value = flag(arg1) end
+        if value == nil then message('Use //tt '..cmd..' [on|off].', 123) return end
         if cmd == 'edit' then set_edit(value)
         elseif cmd == 'enabled' then
             settings.enabled = value
