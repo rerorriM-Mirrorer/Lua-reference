@@ -1,5 +1,16 @@
 # TESTING.md
 
+## Current Development Status - TrustTimer test2 (2026-11-12, America/Chicago)
+
+- **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `feature/trusttimer-20261112` (unverified working branch).
+- **Addon:** `addons/TrustTimer` version `0.1.0-test2`; previous test1 source checkpoint `9040df27fde1797e0ae80369824a0435edcc1ed7`. The test2 publication commit is provided in the delivery rather than embedded in this record.
+- **Changes:** Added bare toggles for `//tt edit`, `//tt enabled`, and `//tt debug`; explicit `on`/`off` remain idempotent. Existing formatted chat and automatic cooldown tracking remain unchanged.
+- **Static/simulated verification:** LuaTeX syntax parse and 31 stubbed event/command tests passed on test2; not actual LuaJIT or Windower.
+- **Live testing:** No in-game FFXI check has been performed on either build. Invite packet detection, cooldown timing, and drag persistence still require live confirmation.
+- **Next:** Load test2, toggle each switch twice, confirm positional editing and existing styled feedback, then calibrate the party invitation timer against FFXI.
+- **History:** Addon-specific cumulative record: `addons/TrustTimer/TESTING.md`. Existing repository history below is preserved.
+
+
 ## Agent entry-point adoption — 2026-10-16
 
 - Added [`AGENTS.md`](AGENTS.md) to direct repository-aware coding agents to read the current `WORKFLOW.md` and `TESTING.md` before making changes.
