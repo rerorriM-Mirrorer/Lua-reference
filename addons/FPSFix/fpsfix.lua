@@ -1,8 +1,8 @@
 -- FPSFix: quietly restore 60 FPS after loading, login, and zoning.
 _addon.name = 'FPSFix'
 _addon.author = 'A'
-_addon.version = '1.0.0'
-_addon.command = 'fpsfix'
+_addon.version = '1.0.1'
+_addon.commands = {'fpsfix', 'fps'}
 
 require('chat')
 
@@ -44,6 +44,8 @@ local function help()
             string.color('//fpsfix', 200) .. ' ' .. string.color(command, 207) ..
             ' ' .. string.color('->', 200) .. ' ' .. description)
     end
+    windower.add_to_chat(0, string.color('//fps', 200) .. ' ' .. string.color('->', 200) .. ' Request 60 FPS immediately')
+    line('(bare)', 'Request 60 FPS immediately')
     line('help', 'Show these commands')
     line('status', 'Show enforcement and last request')
     line('apply', 'Request 60 FPS immediately')
@@ -73,7 +75,7 @@ windower.register_event('unload', function()
 end)
 
 windower.register_event('addon command', function(command)
-    command = command and command:lower() or 'help'
+    command = command and command:lower() or 'apply'
     if command == 'help' then
         help()
     elseif command == 'status' then

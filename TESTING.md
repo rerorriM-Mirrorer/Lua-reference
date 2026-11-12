@@ -1,5 +1,17 @@
 # TESTING.md
 
+## Current Development Status - 2026-11-12 (FPSFix v1.0.1 alias update)
+
+- **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `feature/fpsfix-zone-60fps-20261112`.
+- **Tested starting/source checkpoint:** `09f18292d38195409613ed597577633702e232d7` (FPSFix v1.0.0). Subsequent working-branch commit reported externally.
+- **Change:** FPSFix v1.0.1 accepts `//fps` as a shortcut for immediate divisor 1. Windower Lua addon aliases share one callback, so bare `//fpsfix` also applies while `//fpsfix help` remains explicit. No changes to load/login/zone enforcement or delayed retries.
+- **Conflict check:** Windower 4's documented built-ins include `showfps` and `fps_position`, not `fps`, and its addon system supports multiple command aliases. A user-installed FPS addon/alias could still conflict; remote inspection cannot rule that out.
+- **Available verification:** Local Lua 5.4 parse and mocked Windower command/event/lifecycle checks (not Windower 4 or FFXI).
+- **Live tests pending:** Verify `//fps` works on each loaded client, test `//fpsfix help` and `//fpsfix apply`, check no local `fps` alias collision, then repeat zoning/login FPS recovery tests from v1.0.0.
+- **Next:** User in-game acceptance; do not merge unverified code into `dev`.
+
+---
+
 ## Current Development Status - 2026-11-12 (America/Chicago)
 
 - **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `feature/fpsfix-zone-60fps-20261112` (unverified working branch, not merged into dev).
@@ -52,6 +64,14 @@ Read this first when preparing or evaluating a development/testing batch. This c
 - **Installation:** Install the `FPSFix` folder in Windower addons, then `//lua load fpsfix`. ZIP includes README.md, WORKFLOW.md and TESTING.md inside that folder.
 - **Publication:** New working branch `feature/fpsfix-zone-60fps-20261112`. Baseline `e9cf6ad66b42c322be0351dd735893c85bac4369`. Final branch commit is reported in the delivery; do not self-embed the newly created commit hash in this file.
 
+## FPSFix v1.0.1 shortcut batch - 2026-11-12
+
+- **Request:** `//fps` should be equivalent to `//fpsfix apply` if it has no conflict.
+- **Implementation:** `_addon.commands = {'fpsfix', 'fps'}`. Both command names invoke the same addon callback; with no arguments it applies divisor 1. Explicit `help`, `status`, `apply`, `restart`, and `unload` continue working via `//fpsfix`.
+- **Conflict review:** Windower's published built-ins do not list `fps`, but local custom aliases or third-party addons cannot be inspected from here. If present, disable/rename the conflicting alias/addon; `//fpsfix apply` remains available.
+- **Tests:** Lua 5.4 syntax, alias declarations, bare/explicit apply and original mocked event/lifecycle checks. No real FFXI/Windower 4 test.
+- **Package:** FPSFix-v1.0.1-Test.zip, addon folder contains Lua, README, WORKFLOW, TESTING; source branch `feature/fpsfix-zone-60fps-20261112`.
+
 ## Tests for the next functional batch
 
 List the requested change, actions to perform, expected outcomes, previously working behavior to retest, and results actually observed. This repository may maintain multiple addons; name the addon and its testing branch in each future batch.
@@ -61,6 +81,8 @@ List the requested change, actions to perform, expected outcomes, previously wor
 No historical test results were reconstructed or verified during this documentation migration. Preserve previous testing materials and bring forward only accurately attributed results when reviewed.
 
 ## Cumulative changelog
+
+- **2026-11-12:** FPSFix v1.0.1 adds `//fps` shortcut and bare-command apply behavior. Existing zone/login behavior unchanged; user testing pending.
 
 - **2026-11-12:** Added FPSFix 1.0.0, a self-contained 60 FPS reapplication addon. Mock-tested only; awaiting live validation.
 
@@ -72,10 +94,13 @@ No historical test results were reconstructed or verified during this documentat
 
 | Date | Batch | Item | Type | Commit/reference | Notes |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-12 | FPSFix v1.0.1 | addons/FPSFix; updated ZIP | Shortcut addition | Working branch feature/fpsfix-zone-60fps-20261112 | Local mock tests; live FFXI untested |
 | 2026-11-12 | FPSFix v1.0.0 | addons/FPSFix; ZIP | New Lua addon | Working branch feature/fpsfix-zone-60fps-20261112 | Mock tests passed; live FFXI untested |
 | 2026-10-13 | Documentation adoption | WORKFLOW.md; TESTING.md | Repository documents | [`16a05d6`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/16a05d601ee5b23a9503f2e20bbeee9b9e9ab4c0) | No testing package or Lua changes |
 
 ## User-provided materials, observations, and requests
+
+- **2026-11-12 - FPS shortcut:** User requests `//fps = //fpsfix apply`, provided no conflict.
 
 - **2026-11-12 - FPS reset:** User requests automatic 60 FPS on login/zone and expressly allows changing existing uncapped divisor 0; no need to condition changes on reading divisor 2.
 
