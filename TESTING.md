@@ -1,5 +1,17 @@
 # TESTING.md
 
+## Current Development Status - 2026-11-12 (FixConfig v1.1.0)
+
+- **Repository / working branch:** `rerorriM-Mirrorer/Windower-Addons` / `feature/fpsfix-zone-60fps-20261112` (unverified working branch; not merged into `dev`).
+- **Starting source baseline:** `a9aa2c4282a6ae4b9f963ab351bab2f4dd568de4` (FPSFix v1.0.1).
+- **Change:** Replace `addons/FPSFix/` with `addons/FixConfig/` and rename addon to FixConfig. Automatic load/login/zone requests restore desired `FrameRateDivisor`, `ClippingPlane` and `BattleAutoTarget` immediately and after 1 and 3 seconds. `//fix` reapplies all saved values; `//fix fps/draw/autotarget` adjust and persist character preferences; original `//fps`/`//fpsfix` 60-FPS-only action is retained through the unhandled-command fallback. Help/status/debug/lifecycle commands updated.
+- **Verification:** Lua 5.4 parser check PASSED; mocked Windower event/command/state tests PASSED for load/login/zone, 1- and 3-second retries, logout/unload cancellation, legacy FPS-only aliases, three-setting recovery, invalid commands, per-character preference updates, and once-only lifecycle. These are simulated tests, **not** Windower 4 / Lua 5.1 or live FFXI checks.
+- **Live testing needed:** Unload old FPSFix; load FixConfig and confirm `//fps`, `//fix`, `//fix fps 30/60`, `//fix draw 1.5`, `//fix autotarget` and explicit on/off. Test per-character persistence and fresh login/zone transitions, then verify other addons/aliases do not claim `fps` or `fpsfix`. Confirm plugin availability; check console for errors.
+- **Limitations:** No documented live readback of Config plugin settings. `//fix debug` reports attempted applications, not detected changes or culprit identification. Finite retries do not prevent a reset occurring more than 3 seconds after the last zone. No Config-plugin `config save` is issued.
+- **Next:** User FFXI acceptance testing; keep unverified branch separate from `dev`.
+
+---
+
 ## Current Development Status - 2026-11-12 (FPSFix v1.0.1 alias update)
 
 - **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `feature/fpsfix-zone-60fps-20261112`.
@@ -72,6 +84,16 @@ Read this first when preparing or evaluating a development/testing batch. This c
 - **Tests:** Lua 5.4 syntax, alias declarations, bare/explicit apply and original mocked event/lifecycle checks. No real FFXI/Windower 4 test.
 - **Package:** FPSFix-v1.0.1-Test.zip, addon folder contains Lua, README, WORKFLOW, TESTING; source branch `feature/fpsfix-zone-60fps-20261112`.
 
+## FixConfig v1.1.0 test batch - 2026-11-12
+
+- **User request:** Rename FPSFix to FixConfig, preserve original `//fps` 60 FPS shortcut, and add automatic recovery for `FrameRateDivisor 1`, `ClippingPlane 1.5`, `BattleAutoTarget false` with short `//fix` commands. An unknown reset source remains **unidentified**; do not attribute to FastCS.
+- **Installation:** Unload `fpsfix` and remove its startup entry before installing/loading `FixConfig` (`//lua load fixconfig`). Remove old folder after verifying migration. `WORKFLOW.md` and `TESTING.md` travel inside the installable `FixConfig/` folder in the testing ZIP.
+- **Dependencies:** Windower LuaCore with Lua `config`/`chat` libraries; Windower **Config plugin** for `config ...` commands.
+- **Behavior and compatibility:** `//fix` and `//fixconfig` restore all three saved preferences. `//fps` and `//fpsfix` one-shot apply divisor 1 without editing preferred settings or draw/autotarget. `//fpsfix` is handled as an unhandled command only when nothing else claimed that name. Per-character save uses Lua config library, not Config-plugin `config save`.
+- **Testing and results:** Lua 5.4 parse PASSED; scripted mocked Windower Lua API smoke tests PASSED. Test script exercised 2 named simulated characters and confirmed per-character values and transitions. Actual Windower 4 / Lua 5.1 and in-game behavior NOT tested. Run live test sequence from Current Development Status before merging.
+- **Remote checkpoint:** Prior FPSFix branch head `a9aa2c4282a6ae4b9f963ab351bab2f4dd568de4`. Final FixConfig publishing SHA supplied separately in delivery, not embedded as its own document commit.
+- **Questions/limitations:** Verify user input alias precedence and Config plugin load order on each client. Debug prints only issued commands; it cannot detect the source of setting resets.
+
 ## Tests for the next functional batch
 
 List the requested change, actions to perform, expected outcomes, previously working behavior to retest, and results actually observed. This repository may maintain multiple addons; name the addon and its testing branch in each future batch.
@@ -81,6 +103,8 @@ List the requested change, actions to perform, expected outcomes, previously wor
 No historical test results were reconstructed or verified during this documentation migration. Preserve previous testing materials and bring forward only accurately attributed results when reviewed.
 
 ## Cumulative changelog
+
+- **2026-11-12:** FixConfig v1.1.0 replaces FPSFix; adds three-setting enforcement, per-character preferences and `//fix` commands, and preserves one-shot `//fps`. In-game acceptance pending.
 
 - **2026-11-12:** FPSFix v1.0.1 adds `//fps` shortcut and bare-command apply behavior. Existing zone/login behavior unchanged; user testing pending.
 
@@ -94,11 +118,14 @@ No historical test results were reconstructed or verified during this documentat
 
 | Date | Batch | Item | Type | Commit/reference | Notes |
 | --- | --- | --- | --- | --- | --- |
+| 2026-11-12 | FixConfig v1.1.0 | addons/FixConfig; testing ZIP | Rename + multi-setting safeguard | feature/fpsfix-zone-60fps-20261112 | In-game tests pending |
 | 2026-11-12 | FPSFix v1.0.1 | addons/FPSFix; updated ZIP | Shortcut addition | Working branch feature/fpsfix-zone-60fps-20261112 | Local mock tests; live FFXI untested |
 | 2026-11-12 | FPSFix v1.0.0 | addons/FPSFix; ZIP | New Lua addon | Working branch feature/fpsfix-zone-60fps-20261112 | Mock tests passed; live FFXI untested |
 | 2026-10-13 | Documentation adoption | WORKFLOW.md; TESTING.md | Repository documents | [`16a05d6`](https://github.com/rerorriM-Mirrorer/Windower-Addons/commit/16a05d601ee5b23a9503f2e20bbeee9b9e9ab4c0) | No testing package or Lua changes |
 
 ## User-provided materials, observations, and requests
+
+- **2026-11-12 - FixConfig:** User requests replacing FPSFix with FixConfig, preserving existing `//fps` behavior, and applying all three desired settings automatically. User explicitly ruled out FastCS as a cause.
 
 - **2026-11-12 - FPS shortcut:** User requests `//fps = //fpsfix apply`, provided no conflict.
 
@@ -109,4 +136,4 @@ No historical test results were reconstructed or verified during this documentat
 
 ## Corrections and retention
 
-Correct errors with ~~strikethrough~~, an explanation, and the replacement. Remove historical testing information only by mutual agreement.
+Correct errors with ~~strikethrough~~, an explanation, and the replacement. Remove historical information only by mutual agreement.
