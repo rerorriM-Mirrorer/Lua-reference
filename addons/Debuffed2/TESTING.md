@@ -1,6 +1,35 @@
 # TESTING — Debuffed2 independent edition
 
-## Current testing batch — Debuffed2 Test 1 (2026-11-11)
+## Current testing batch — Debuffed2 Test 2, Cioara factory profile (2026-11-12)
+
+- **Repository / development branch:** `rerorriM-Mirrorer/Windower-Addons` / `work/debuffed2-cioara-defaults-20261112`, based on committed Debuffed2 Test 1 `afb5b0db97d14466474beacb4b93e4ea8a3cdd52`. The original `addons/Debuffed/`, prior Debuffed2 branch, and `dev` remain untouched.
+- **User source:** `settings(20261112-093301).xml`, supplied 2026-11-12. Its `<global>` values are the previous baseline (24px, slots16, wrap16, position160/230); `<cioara>` overrides iconsize36, slots18, wrap9, pos(1500,100). The effective Cioara combination is the reference; no extra preferences are inferred.
+- **Changes:** Update the four hardcoded factory values in `Debuffed2.lua` and internal renderer fallbacks; retain all other XML-global defaults, including horizontal layout, 5px spacing, 10px Ctrl grid, timers, name off, and blacklist. Add `_addon.commands` alias `db` while retaining `db2` and `debuffed2`, with all routed through the existing single handler. Help heading now lists both short aliases. Version `1.0.0.4-debuffed2-test2-cioara-defaults`.
+- **Global settings example:** `examples/settings.global-example.xml` is a conversion of the submitted XML with the Cioara overrides promoted into `<global>`; `<cioara>` is removed from *the example only*. It is not installed as `data/settings.xml`, never overwrites a user's character XML, and is intended for manual merge when existing global values should change. Windower `config.load(defaults)` creates a matching global file on fresh installs; existing global/character overrides remain higher priority. The supplied X=1500 is 4K-specific; saved window bounds apply on smaller clients.
+- **Command collision:** Stock `Debuffed` also owns `//db`. Unload it before testing Debuffed2 with `//db`; `//db2` still works. No attempt to intercept or override other addons' command registration.
+- **Scope:** No changes to packet tracker, drag/snap/position-save algorithms, name typography, timers/animations, `config` library, or resource art. Preserve earlier TESTING history and original addon.
+
+### Offline checks performed
+
+- Lua `loadfile` syntax for both addon source files and `tests/defaults_spec.lua`: PASS under `texlua --luaonly` (not a Lua5.1 runtime guarantee).
+- Mocked entrypoint and icon layout (`texlua --luaonly tests/defaults_spec.lua`): PASS for factory 36px / 18 slots / 9 per row / (1500,100), enabled aliases `db`, `db2`, `debuffed2`, help listing, 9x2 grid footprint and guide anchoring, absolute Ctrl snap, and 960x540 bound/saving. Mock uses replacement Windower APIs, not game input.
+- XML: parsed original uploaded XML and generated example; checked that exactly four `<cioara>` overrides match the changed `<global>` tags; other global values untouched. Example is deliberately not a live `settings.xml` and has no automatic migration behavior.
+- Static diff: original Xathe tracker and all original Debuffed paths unchanged; only Debuffed2 defaults/alias/fallbacks, docs, test, and example are affected.
+- **Actual in-game testing:** Not performed. See checklist before promoting.
+
+### FFXI acceptance checklist (pending)
+
+1. Back up any `Debuffed2/data/settings.xml`; unload `Debuffed` and `Debuffed2`. Install the complete `Debuffed2/` folder without replacing data, then `//lua l Debuffed2`.
+2. On a fresh test settings file, confirm `//db status` reports version Test 2 and `slots=18; wrap=9`, with 36px icons and an initial position near (1500,100) on the 3840x2160 client. `//db2 status` should be identical. On smaller clients, confirm the anchor is clamped and its saved position is independent.
+3. `//db help` and `//db2 help` should show both aliases; test a harmless `//db2 grid` and `//db grid`. If stock Debuffed is loaded, expect possible alias conflicts; stop it before judging Debuffed2.
+4. `//db edit on`: confirm 18 example guides in two rows of nine, 36px icons; try `//db wrap 6`, `//db slots 12`, `//db iconsize 24` then restore the 18/9/36 profile. Test left/right Ctrl+drag and free drag.
+5. Reload and verify position/size/row cutoff persist. Test an existing saved global/character XML without overwriting it: known old values must survive; manually merge the example's global profile only when intended. Check other characters for inherited defaults and preserved overrides.
+6. Validate `//db targetname on` (EnemyBar2-style no brackets), actual debuffs/Dia priority, timers, preview, startup and fade effects, `//db restart` and `//db unload`, and no accidental interference with stock Debuffed assets or settings.
+7. Record the exact character, client resolution, settings XML (if relevant), and command results in this cumulative record. Do not treat offline mock success as FFXI validation.
+
+---
+
+## Previous testing batch — Debuffed2 Test 1 (2026-11-11)
 
 - **Source:** `rerorriM-Mirrorer/Windower-Addons`, based on published Debuffed Test 2.4.5 Save 1 (`88011713f46d3822431fa4d13928845d9539ef09`) from `work/debuffed-position-save-20261107`. New candidate branch: `work/debuffed2-name-style-20261111`. Original `addons/Debuffed/` and previous development branches are unchanged.
 - **Purpose:** Isolate the personalized icon addon from Windower updates to stock `addons/Debuffed/`, and match the EnemyBar2 main target name typography without brackets.

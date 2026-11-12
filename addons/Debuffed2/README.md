@@ -1,18 +1,42 @@
-# Debuffed2 — independent icon-presentation test build
+# Debuffed2 — independent icon-presentation test build (Cioara defaults)
 
 Original addon: Xathe, `Debuffed` v1.0.0.4 (Windower/Lua).  
 Icon presentation, help, and transitions: A.  
-Testing build: `1.0.0.4-debuffed2-test1` (2026-11-11), based on the complete Debuffed Test 2.4.5 Save 1 fix.
+Testing build: `1.0.0.4-debuffed2-test2-cioara-defaults` (2026-11-12), based on Debuffed2 Test 1 and the complete Test 2.4.5 position-save fix.
+
+## Current factory profile (Test 2)
+
+The effective Cioara profile in the supplied `settings(20261112-093301).xml` is now the **hardcoded Debuffed2 factory default**, and the same values are provided in `examples/settings.global-example.xml` as a global-settings example:
+
+| Setting | Factory value |
+| --- | --- |
+| Icon size | 36 Windower UI pixels |
+| Total icons | 18 |
+| Row cutoff | 9 (two rows of nine) |
+| Parent position on Cioara's 4K screen | X=1500, Y=100 |
+| Drag snap | 10px, screen-origin (0,0) |
+| Icon spacing | 5px |
+| Layout | Horizontal |
+| Target name | Off (EnemyBar2-style Arial14 bold italic when enabled) |
+| Timers | On; size 8; X=0, Y=-3 |
+
+The other values from the uploaded global section remain as before. No personal character settings XML is included at the install path, and the existing name typography, timers, input, and tracking logic have not been modified in this batch.
+
+Fresh installs with no `Debuffed2/data/settings.xml` get these defaults automatically through Windower `config.load`. **Existing saved global or character overrides still take precedence**, so reloading alone does not replace your personal layout. To update an existing Debuffed2 installation, back up `data/settings.xml`, unload the addon, and merge the four values above into its `<global>` section, using `examples/settings.global-example.xml` for reference. Keep any other character sections. A character with its own `<iconsize>`, `<slots>`, `<wrap>`, or `<pos>` override keeps that override unless you intentionally edit it. Do not copy the example over a multi-character settings file or your other overrides would be lost.
+
+The X=1500 starting coordinate is deliberately the supplied 4K coordinate. Existing viewport safeguards clamp it onscreen in smaller clients; dragging then saves an independent position for that character.
+
+The command aliases are now `//db`, `//db2`, and `//debuffed2`. Both short aliases run exactly the same handlers. Only one addon should own `//db` at a time: unload stock Debuffed (`//lua u Debuffed`) before loading Debuffed2, or use `//db2` where a collision needs to be avoided.
 
 ## Debuffed2 independent installation
 
-This is an optional copy of our updated Debuffed, installed separately as `Windower/addons/Debuffed2/` so an ordinary Windower update of `addons/Debuffed/` does not replace this edition. It registers only `//db2` and `//debuffed2`, not `//db`, `//dbf` or `//debuffed`; no command collisions with the stock addon.
+This is an optional copy of our updated Debuffed, installed separately as `Windower/addons/Debuffed2/` so an ordinary Windower update of `addons/Debuffed/` does not replace this edition. It registers `//db`, `//db2`, and `//debuffed2`. The restored `//db` alias collides with stock Debuffed if both addons run, so unload the old addon for ordinary use.
 
 First unload the old addon with `//lua u Debuffed` to avoid duplicate tracking/UI. Then install the complete `Debuffed2/` directory into `Windower/addons/` and run `//lua l Debuffed2`. Start with fresh Debuffed2 settings; after validating the new version, optionally copy your backed-up original `Debuffed/data/settings.xml` into `Debuffed2/data/settings.xml` while the addon is unloaded, then reload it. This is an explicit one-time migration, not an automatic modification of either installation.
 
 Run `//db2 targetname on` to show the current target name above the icon field, in EnemyBar2's main-bar **Arial 14 bold italic, 2px outlined** name style, without surrounding brackets or an appended HP percentage. The original default of `targetname off` remains unchanged. The classic-text fallback also removes the old `[name]` brackets.
 
-The `//db2 wrap 8` command starts a new row after eight icons; `//db2 slots 16` limits the display to sixteen icons total. Default icon size is still 24px. Existing Ctrl+drag grid-snapping and position-saving fixes carry over.
+The factory layout is now two rows of nine: `//db wrap 9`, `//db slots 18`, and `//db iconsize 36`. These commands work through `//db2` as well. Existing Ctrl+drag grid-snapping and position-saving fixes carry over.
 
 ## Installation
 
@@ -23,7 +47,7 @@ The `//db2 wrap 8` command starts a new row after eight icons; `//db2 slots 16` 
 5. Install XivParty separately with its original `assets/buffIcons/` directory. We read those existing textures and do not redistribute them.
 6. Unload the original addon if it is loaded (`//lua u Debuffed`); then run `//lua l Debuffed2` (use `//lua r Debuffed2` for future updates).
 
-Command aliases: `//db2` and `//debuffed2`. (`//db`, `//dbf`, `//debuffed` belong to the original addon.)
+Command aliases: `//db`, `//db2` and `//debuffed2`. The original Debuffed also registers `//db`; don't load both together.
 
 ### Positioning and Ctrl+drag (Test 2.4.4)
 
@@ -36,8 +60,8 @@ The classic text fallback retains its historical behavior apart from its newly u
 ## Inherited from Test 2.4
 
 - `//db2 preview` — full **12-second** visual preview: 11, 10, ... 0 (one count per second), then a 0.65-second fade-out. Samples are **not** reported as enemy debuffs. The *automatic* startup animation remains brief (1.2-second hold plus 0.65-second fade).
-- `//db2 edit` — 16 outlined slot guides by default, with dimmed sample status icons and individual timer labels. Their 62-second sample cycle repeats, displayed as **1m → 1m → 59 → ... → 0 → 1m** until editing is turned off. Real tracked icons are temporarily hidden during edit mode. Timer X/Y offsets and timer size apply to these dummy labels too.
-- Default `slots=16`, `wrap=16`, horizontal orientation (one row). **Existing saved settings override defaults**: run `//db2 slots 16` and `//db2 wrap 16` once if your prior installation retained `32`.
+- `//db2 edit` — 18 outlined slot guides by default, with dimmed sample status icons and individual timer labels. Their 62-second sample cycle repeats, displayed as **1m → 1m → 59 → ... → 0 → 1m** until editing is turned off. Real tracked icons are temporarily hidden during edit mode. Timer X/Y offsets and timer size apply to these dummy labels too.
+- Factory defaults now `slots=18`, `wrap=9`, `iconsize=36`, horizontal orientation (two rows). In Test 1, these were 16/16/24. Existing saved settings override the new factory values; adjust saved global XML if you want all characters to inherit the new profile.
 - `//db2 restart` — reports action in the FFXI chat log, fades visible UI for ~0.36s, then sends `lua r Debuffed2` once.
 - `//db2 unload` — same closing transition followed by `lua u Debuffed2` once.
 - `//db2` or `//db2 help` — new BattleStations-inspired, color-coded in-game help with commands and explanations; no deliberate duplicate console output. Bad commands receive short errors instead of dumping the entire help.
@@ -56,7 +80,7 @@ The bracket notation is `<required>` and `[optional]`. The `|` character indicat
 | `//db2 wrap <0-64>` | Slots per row (horizontal) or column (vertical); 0 = no wrap |
 | `//db2 display <icons\|text>` | Select icon rendering or classic text |
 | `//db2 layout <horizontal\|vertical>` | Set primary fill direction |
-| `//db2 iconsize <12-96>` | Icon size in pixels (default 24) |
+| `//db2 iconsize <12-96>` | Icon size in pixels (default 36) |
 | `//db2 iconspacing <0-40>` | Gap between slots (default 5) |
 | `//db2 grid [1-200]` | Show/set shared Ctrl+drag snap spacing in Windower UI pixels (default 10) |
 | `//db2 sort <priority\|id>` | Dia first or numeric buff status ID |
@@ -78,7 +102,7 @@ The bracket notation is `<required>` and `[optional]`. The `|` character indicat
 | `//db2 restart` | Fade then reload the addon |
 | `//db2 unload` | Fade then unload the addon |
 
-For example: `//db2 timerx -2`, `//db2 timery -4`, `//db2 slots 16`, `//db2 wrap 8`.
+Both `//db` and `//db2` accept these commands. For example: `//db timerx -2`, `//db timery -4`, `//db slots 18`, `//db wrap 9`.
 
 ## Technical behavior
 
@@ -96,6 +120,7 @@ Lua parser checks and mocked renderer regression simulations passed for drag sav
 
 ## Changelog
 
+- **Debuffed2 Test 2 (2026-11-12):** Promoted Cioara's effective 36px/18-slot/9-wrap/(1500,100) profile to factory defaults, with a matching opt-in global XML example; restored `//db` alongside `//db2` and `//debuffed2`. No automatic overwrite of saved settings or change to the original Debuffed folder. Syntax and mock tests passed; live FFXI pending.
 - **Test 2.4.5 (2026-11-07):** Corrected position persistence after normal and Ctrl+drag. Pending moves can no longer be prevented from saving by same-cell snapped motion; screen-boundary corrections are recorded too. The fallback save timer uses wall time instead of CPU time if LuaSocket is unavailable. Movement is saved before edit/layout changes, restart and unload. No changes to tracking, drag capture, icon layout or animation timing.
 - **Test 2.4 (2026-10-13):** BattleStations-style chat help; 12-second countdown preview; editable 1:10 looping dummy timers with transparent samples + retained edit boxes; 16/16 defaults; fade-before-restart/unload; preserved tracking.
 - **Test 2.3 (2026-10-10):** Arial bold-italic timer font and adjustable size/X/Y positions, configurable slots and wrapping, added `//db` alias.

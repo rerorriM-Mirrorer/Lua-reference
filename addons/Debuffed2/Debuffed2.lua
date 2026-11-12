@@ -31,8 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 -- Windower version 1.0.0.4. The new renderer only reads debuffed_mobs.
 _addon.name = 'Debuffed2'
 _addon.author = 'Xathe (Asura); icon presentation: A'
-_addon.version = '1.0.0.4-debuffed2-test1'
-_addon.commands = {'db2', 'debuffed2'}
+_addon.version = '1.0.0.4-debuffed2-test2-cioara-defaults'
+_addon.commands = {'db', 'db2', 'debuffed2'}
 
 config = require('config')
 packets = require('packets')
@@ -70,15 +70,19 @@ defaults.colors.others.red = 255
 defaults.colors.others.green = 255
 defaults.colors.others.blue = 0
 
--- Icon presentation defaults. Position is shared with the classic text view.
-defaults.pos = {x = 160, y = 230}
+-- The factory icon layout matches the effective Cioara profile supplied
+-- 2026-11-12: 36px, 18 slots, 9 per row, anchor (1500,100) at 4K.
+-- config.load merges existing global/character XML over these defaults;
+-- never overwrite a user's saved settings simply because the factory changed.
+-- Position is shared with the classic text view.
+defaults.pos = {x = 1500, y = 100}
 defaults.display = 'icons'
 defaults.layout = 'horizontal'
-defaults.iconsize = 24
+defaults.iconsize = 36
 defaults.iconspacing = 5
 defaults.draggrid = 10 -- Ctrl+drag, absolute screen-origin Windower UI pixels
-defaults.slots = 16 -- displayed effects AND individual edit/preview guides (1..64)
-defaults.wrap = 16  -- icons per row/column; 0 = no wrap
+defaults.slots = 18 -- displayed effects AND individual edit/preview guides (1..64)
+defaults.wrap = 9   -- icons per row/column; 0 = no wrap
 defaults.timersize = 8
 defaults.timerx = 0   -- horizontal offset, positive = right
 defaults.timery = -3 -- vertical offset, negative = up
@@ -432,7 +436,7 @@ end
 
 local function show_help()
     help_border()
-    help_heading('Commands')
+    help_heading('Commands (//db and //db2)')
     help_border()
     help_section('Display')
     help_entry('edit [on|off]', 'Position sample icons and timers')
@@ -518,7 +522,7 @@ windower.register_event('addon command', function(command1, command2, ...)
             settings:save()
             update_display()
         else
-            notice('Usage: //db2 iconsize 12..96 (default 24)')
+            notice('Usage: //db2 iconsize 12..96 (default 36)')
         end
     elseif command1 == 'iconspacing' then
         local spacing = tonumber(command2)
@@ -543,7 +547,7 @@ windower.register_event('addon command', function(command1, command2, ...)
     elseif command1 == 'slots' then
         local count = tonumber(command2)
         if not command2 then
-            notice(('Visible slots: %d (1..64).'):format(tonumber(settings.slots) or 16))
+            notice(('Visible slots: %d (1..64).'):format(tonumber(settings.slots) or 18))
         elseif count and count == math.floor(count) and count >= 1 and count <= 64 then
             settings.slots = count
             settings:save()
@@ -555,7 +559,7 @@ windower.register_event('addon command', function(command1, command2, ...)
     elseif command1 == 'wrap' then
         local count = tonumber(command2)
         if not command2 then
-            notice(('Wrap after: %d (0 = no wrapping).'):format(tonumber(settings.wrap) or 16))
+            notice(('Wrap after: %d (0 = no wrapping).'):format(tonumber(settings.wrap) or 9))
         elseif count and count == math.floor(count) and count >= 0 and count <= 64 then
             settings.wrap = count
             settings:save()

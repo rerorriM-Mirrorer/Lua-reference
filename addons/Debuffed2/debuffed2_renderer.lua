@@ -78,13 +78,13 @@ local function preview_effect(index)
 end
 
 local function slot_count(settings)
-    return math.max(1, math.min(MAX_ALLOWED, math.floor(tonumber(settings.slots) or 16)))
+    return math.max(1, math.min(MAX_ALLOWED, math.floor(tonumber(settings.slots) or 18)))
 end
 
 -- 'wrap' is the capacity along the primary layout axis. Zero disables wrapping.
 local function grid_dimensions(settings)
     local count = slot_count(settings)
-    local wrap = math.floor(tonumber(settings.wrap) or 16)
+    local wrap = math.floor(tonumber(settings.wrap) or 9)
     local primary = wrap <= 0 and count or math.max(1, math.min(count, wrap))
     if settings.layout == 'vertical' then
         return math.ceil(count / primary), primary
@@ -209,7 +209,7 @@ function IconRenderer.new(settings)
     return self
 end
 
--- Rebuild only guides that were added/removed. The default is 16,
+-- Rebuild only guides that were added/removed. The factory default is 18,
 -- and existing images are retained across wrapping/size changes.
 function IconRenderer:resize_guides()
     local desired = slot_count(self.settings)
@@ -380,7 +380,7 @@ end
 function IconRenderer:layout()
     if not self.visible then return end
     local s = self.settings
-    local size = tonumber(s.iconsize) or 24
+    local size = tonumber(s.iconsize) or 36
     local gap = tonumber(s.iconspacing) or 5
     local vertical = s.layout == 'vertical'
     self:resize_guides_if_needed()
@@ -459,7 +459,7 @@ end
 
 function IconRenderer:position_sprite(sprite)
     local x, y = self.backdrop:pos()
-    local size = tonumber(self.settings.iconsize) or 24
+    local size = tonumber(self.settings.iconsize) or 36
     local sx, sy = x + sprite.dx, y + sprite.dy
     sprite.image:pos(sx, sy)
     sprite.image:size(size, size)

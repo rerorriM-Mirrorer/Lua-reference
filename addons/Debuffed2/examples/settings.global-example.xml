@@ -1,0 +1,75 @@
+<?xml version="1.1" ?>
+<settings>
+    <global>
+        <background_alpha>0</background_alpha>
+        <bg>
+            <alpha>90</alpha>
+            <blue>0</blue>
+            <green>0</green>
+            <red>0</red>
+            <visible>false</visible>
+        </bg>
+        <blacklist />
+        <colors>
+            <others>
+                <blue>0</blue>
+                <green>255</green>
+                <red>255</red>
+            </others>
+            <player>
+                <blue>255</blue>
+                <green>255</green>
+                <red>255</red>
+            </player>
+        </colors>
+        <display>icons</display>
+        <draggrid>10</draggrid>
+        <edit>false</edit>
+        <flags>
+            <bold>false</bold>
+            <bottom>false</bottom>
+            <draggable>true</draggable>
+            <italic>false</italic>
+            <right>false</right>
+        </flags>
+        <hide_below_zero>false</hide_below_zero>
+        <iconpath>../XivParty/assets/buffIcons/</iconpath>
+        <iconsize>36</iconsize>
+        <iconspacing>5</iconspacing>
+        <interval>0.1</interval>
+        <layout>horizontal</layout>
+        <mode>blacklist</mode>
+        <padding>0</padding>
+        <pos>
+            <x>1500</x>
+            <y>100</y>
+        </pos>
+        <slots>18</slots>
+        <sort>priority</sort>
+        <targetname>false</targetname>
+        <text>
+            <alpha>255</alpha>
+            <blue>255</blue>
+            <font>Arial</font>
+            <fonts>
+
+            </fonts>
+            <green>255</green>
+            <red>255</red>
+            <size>12</size>
+            <stroke>
+                <alpha>255</alpha>
+                <blue>0</blue>
+                <green>0</green>
+                <red>0</red>
+                <width>0</width>
+            </stroke>
+        </text>
+        <timers>true</timers>
+        <timersize>8</timersize>
+        <timerx>0</timerx>
+        <timery>-3</timery>
+        <whitelist />
+        <wrap>9</wrap>
+    </global>
+</settings>

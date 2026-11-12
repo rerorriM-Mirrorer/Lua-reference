@@ -1,5 +1,13 @@
 # TESTING.md
 
+## Debuffed2 — Cioara factory defaults and //db alias (2026-11-12)
+
+- **Repository / branch:** `rerorriM-Mirrorer/Windower-Addons` / `work/debuffed2-cioara-defaults-20261112`, based on `afb5b0d` (Debuffed2 Test 1). This is an opt-in development build; prior Debuffed2, stock Debuffed and `dev` remain unchanged.
+- **User-provided reference:** `settings(20261112-093301).xml`, supplied 2026-11-12. Its global values combined with Cioara's four specific overrides yield iconsize=36, slots=18, wrap=9, pos=(1500,100). These values now define the hardcoded Debuffed2 factory, and a converted global-only example is bundled without touching saved `data/settings.xml`.
+- **Commands:** Restore `//db` alongside `//db2` and `//debuffed2`. Warn that stock Debuffed also registers `db`; load only one owner. All aliases use the existing one command handler.
+- **Verification:** `texlua` parses the modified Lua and regression spec; mocked addon+renderer confirms 18 guides in 9x2 rows, 36px layout, 4 viewport widths/4 icon sizes, 10px shared snapping, bounds, position-save handling and aliases. Uploaded XML versus converted example was compared for exact effective global values. Original tracking section unchanged. These are offline/static checks, not FFXI runtime tests.
+- **Installation/testing:** See [Debuffed2/TESTING.md](addons/Debuffed2/TESTING.md), which retains all prior testing history and documents the live verification steps. Existing per-character/global XML overrides take precedence and are never silently replaced.
+
 ## Debuffed2 — independent icon edition candidate (2026-11-11)
 
 - **Source/branch:** `rerorriM-Mirrorer/Windower-Addons` / `work/debuffed2-name-style-20261111`, based on Test 2.4.5 Save 1 commit `8801171`. New source lives in `addons/Debuffed2/` only; original `addons/Debuffed/` and live-tested branches remain intact.
