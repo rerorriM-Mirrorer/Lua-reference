@@ -18,14 +18,15 @@ Everything is client-local. Persistent position/style settings are created by Wi
 | `//tt status` | Current cooldown estimate, pending invite, and HUD settings |
 | `//tt test` | Simulate a 15-second countdown and ready animation |
 | `//tt test 120` | Simulate a longer countdown |
-| `//tt edit on` | Show a movable placement preview; drag the text |
-| `//tt edit off` | Hide the placement preview and disable mouse interception |
+| `//tt edit` | Toggle a movable placement preview; drag the text |
+| `//tt edit on` | Explicitly enable placement mode (no change if already on) |
+| `//tt edit off` | Explicitly disable placement mode and mouse interception |
 | `//tt pos 800 160` | Set position directly |
 | `//tt resetpos` | Recover off-screen position |
 | `//tt size 16` | Set text size (8-40) |
 | `//tt duration 120` | Change estimate (30-600 seconds) |
-| `//tt enabled on` / `off` | Control automatic HUD display |
-| `//tt debug on` / `off` | Show invitation/party detection decisions |
+| `//tt enabled [on\|off]` | Toggle automatic HUD display, or explicitly set it |
+| `//tt debug [on\|off]` | Toggle invitation/party diagnostics, or explicitly set it |
 | `//tt clear` | Clear a countdown or demo |
 | `//tt restart` | Reload this addon |
 | `//tt unload` | Unload this addon |
@@ -40,8 +41,10 @@ The first test version deliberately does not claim to detect successful Trust sp
 
 ## Current development status
 
-**v0.1.0-test1 (November 12, 2026):** Lua syntax checked with LuaTeX's embedded Lua; 19 simulated Windower event/command scenarios passed. **Not yet tested in Windower 4 or live FFXI.** See `TESTING.md` for the live acceptance checklist and `docs/PACKETS.md` for detection assumptions.
+**v0.1.0-test2 (November 12, 2026):** Lua syntax checked with LuaTeX's embedded Lua; 19 simulated Windower event/command scenarios passed. **Not yet tested in Windower 4 or live FFXI.** See `TESTING.md` for the live acceptance checklist and `docs/PACKETS.md` for detection assumptions.
 
 ## Changelog
+
+- **2026-11-12, v0.1.0-test2:** `//tt edit`, `//tt enabled`, and `//tt debug` toggle with no argument; explicit `on`/`off` remains idempotent. Updated help and usage. No cooldown-detection changes.
 
 - **2026-11-12, v0.1.0-test1:** Initial standalone HUD; outgoing-invite + confirmed human-join detection, configurable countdown, ready fade, drag/position persistence, size control, test preview, debug/status/help and lifecycle commands.
